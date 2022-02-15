@@ -1,0 +1,2 @@
+export const MAX_DISTANCE_TO_CLOSE_POINT = 5;
+export const MAX_DISTANCE_TO_CONTROL_POINT = 5;
