@@ -123,10 +123,9 @@ label[for="file-input"] {
 .Hidden {
   display: none;
 }
+
 .AbsolutePosition {
   position: absolute;
-  top: 0;
-  left: 0;
 }
 
 canvas {
