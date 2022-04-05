@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useMemo, useReducer } from "react";
 import { CanvasMode } from "./types/CanvasMode";
 
 import { Translate } from "./i18n/strings";
@@ -204,9 +204,6 @@ const reducer = (state: Canvas, actions: Action[]) => {
         });
         break;
       }
-      case ActionType.SetCursor:
-        state = canvas(state, { cursor: action[1] });
-        break;
       case ActionType.SelectCurrentShapeVectors: {
         const [, shapes, , currentShapeId] = state.snapshot;
         const shape = getShapeById(shapes, currentShapeId);
@@ -249,7 +246,7 @@ const reducer = (state: Canvas, actions: Action[]) => {
       case ActionType.SetSelectionRectangle: {
         const [, shapes, vectors] = state.snapshot;
         const selectionBoundingBox = boundingBoxFromVectorPairs(
-          state.cursor,
+          action[3],
           action[1]
         );
         let smallestBoundingBoxArea: number | null = null;
@@ -305,14 +302,14 @@ const reducer = (state: Canvas, actions: Action[]) => {
         const vector = getVectorById(vectors, currentVectorId) as CubicVector;
         const left = getVectorById(vectors, vector.left) as ReflectionVector;
         const right = getVectorById(vectors, vector.right) as ReflectionVector;
-        const difference = subtract(state.cursor, vector.position);
+        const difference = subtract(action[1], vector.position);
         state = canvas(state, {
           snapshot: [
             mode,
             shapes,
             updateVectorsById(vectors, {
               [left.id]: { position: subtract(vector.position, difference) },
-              [right.id]: { position: state.cursor },
+              [right.id]: { position: action[1] },
             }),
             shapeId,
             currentVectorId,
@@ -325,7 +322,7 @@ const reducer = (state: Canvas, actions: Action[]) => {
           const [mode, shapes, vectors, ...rest] = state.snapshot;
           const vector = getVectorById(vectors, vectorId);
           const previousPosition = state.translatedVectorPositions[vector.id];
-          const difference = subtract(action[2], state.cursor);
+          const difference = subtract(action[2], action[3]);
           let patchedVectors = updateVectorsById(vectors, {
             [vector.id]: { position: subtract(previousPosition, difference) },
           });
@@ -340,7 +337,7 @@ const reducer = (state: Canvas, actions: Action[]) => {
                 (fromLeft as CubicVector).right
               );
               const differenceToOrigin = subtract(
-                state.cursor,
+                action[3],
                 fromLeft.position
               );
               patchedVectors = updateVectorsById(patchedVectors, {
@@ -359,7 +356,7 @@ const reducer = (state: Canvas, actions: Action[]) => {
                   (fromRight as CubicVector).left
                 );
                 const differenceToOrigin = subtract(
-                  state.cursor,
+                  action[3],
                   fromRight.position
                 );
                 patchedVectors = updateVectorsById(patchedVectors, {
@@ -425,7 +422,7 @@ const reducer = (state: Canvas, actions: Action[]) => {
           break;
         }
         const vector = singularVector(
-          state.cursor,
+          action[1],
           uuidv4(),
           currentShape[1].length === 0
         );
@@ -444,12 +441,12 @@ const reducer = (state: Canvas, actions: Action[]) => {
         const [drawingMode, shapes, vectors, currentShapeId] = state.snapshot;
         const currentShape = getShapeById(shapes, currentShapeId);
         const vector = cubicVector(
-          state.cursor,
+          action[1],
           uuidv4(),
           currentShape[1].length === 0
         );
-        const leftReflection = reflectionVector(state.cursor, uuidv4());
-        const rightReflection = reflectionVector(state.cursor, uuidv4());
+        const leftReflection = reflectionVector(action[1], uuidv4());
+        const rightReflection = reflectionVector(action[1], uuidv4());
         vector.left = leftReflection.id;
         vector.right = rightReflection.id;
         state = canvas(state, {
@@ -488,227 +485,217 @@ function App() {
   const [canvas, dispatch] = useReducer(reducer, defaultCanvas);
   const [mode, shapes, vectors, currentShapeId] = canvas.snapshot;
   useKeyCombinations(keyCombinations, dispatch);
-  const canvasElements: CanvasElement[] = [
-    canvasElement({ htmlId: "nextVectorPreview" }),
-    canvasElement({
-      htmlId: "points",
-      content: canvasContentForPoints(canvas),
-    }),
-    canvasElement({
-      htmlId: "boundingBoxes",
-      content: canvasContentForBoundingBoxes(canvas),
-    }),
-    canvasElement({
-      htmlId: "selectionRectangle",
-      content: [
-        [
-          vectorsToPath2d(boundingBoxToVectors(canvas.selection[0])),
-          [WhiteTransparent, Black, 1],
+  const canvasElements: CanvasElement[] = useMemo(() => {
+    return [
+      canvasElement({ htmlId: "nextVectorPreview" }),
+      canvasElement({
+        htmlId: "points",
+        content: canvasContentForPoints(canvas),
+      }),
+      canvasElement({
+        htmlId: "boundingBoxes",
+        content: canvasContentForBoundingBoxes(canvas),
+      }),
+      canvasElement({
+        htmlId: "selectionRectangle",
+        content: [
+          [
+            vectorsToPath2d(boundingBoxToVectors(canvas.selection[0])),
+            [WhiteTransparent, Black, 1],
+          ],
         ],
-      ],
-    }),
-    canvasElement({
-      htmlId: "drawing",
-      content: canvas.snapshot[1].map(([, vectorIds, style]) => [
-        vectorsToPath2d(
-          vectorIds.map((vectorId) => getVectorById(vectors, vectorId)),
-          vectors
-        ),
-        style,
-      ]),
-    }),
-    canvasElement({
-      htmlId: "eventListeners",
-      onMouseMove: (position: Point) => {
-        switch (mode) {
-          case CanvasMode.OnLoopSegment:
-          case CanvasMode.OnVector:
-          case CanvasMode.Draw: {
-            const currentShape = getShapeById(shapes, currentShapeId);
-            if (!currentShape) {
+      }),
+      canvasElement({
+        htmlId: "drawing",
+        content: canvas.snapshot[1].map(([, vectorIds, style]) => [
+          vectorsToPath2d(
+            vectorIds.map((vectorId) => getVectorById(vectors, vectorId)),
+            vectors
+          ),
+          style,
+        ]),
+      }),
+      canvasElement({
+        htmlId: "eventListeners",
+        onMouseMove: (position: Point) => {
+          switch (mode) {
+            case CanvasMode.OnLoopSegment:
+            case CanvasMode.OnVector:
+            case CanvasMode.Draw: {
+              const currentShape = getShapeById(shapes, currentShapeId);
+              if (!currentShape) {
+                break;
+              }
+              const vector = findVectorCloserTo(
+                currentShape[1]
+                  .map((vectorId) => getVectorById(vectors, vectorId))
+                  .map((vector) => {
+                    if (vector.type === VectorType.Cubic) {
+                      return [
+                        vector,
+                        getVectorById(vectors, vector.left),
+                        getVectorById(vectors, vector.right),
+                      ];
+                    }
+                    return [vector];
+                  })
+                  .reduce((prev, current) => prev.concat(current), []),
+                position
+              );
+              if (vector) {
+                const shape = getShapeOfVector(shapes, vector.id);
+                dispatch([
+                  [
+                    ActionType.SwitchMode,
+                    shape &&
+                    currentShapeId === shape[0] &&
+                    isLoopableVectorType(vector.type) &&
+                    (vector as LoopableVector).loopSegment
+                      ? CanvasMode.OnLoopSegment
+                      : CanvasMode.OnVector,
+                  ],
+                  [ActionType.SetOnVectorId, vector.id, position],
+                ]);
+              } else {
+                dispatch([
+                  [ActionType.SwitchMode, CanvasMode.Draw],
+                  [ActionType.SetOnVectorId, StaticVectorId, position],
+                ]);
+              }
+            }
+          }
+        },
+        onClick: (position: Point, shiftKey: boolean) => {
+          switch (mode) {
+            case CanvasMode.OnVector: {
+              if (shiftKey) {
+                dispatch([[ActionType.DeleteVector], [ActionType.AddToHistory]]);
+              }
               break;
             }
-            const vector = findVectorCloserTo(
-              currentShape[1]
-                .map((vectorId) => getVectorById(vectors, vectorId))
-                .map((vector) => {
-                  if (vector.type === VectorType.Cubic) {
-                    return [
-                      vector,
-                      getVectorById(vectors, vector.left),
-                      getVectorById(vectors, vector.right),
-                    ];
-                  }
-                  return [vector];
-                })
-                .reduce((prev, current) => prev.concat(current), []),
-              position
-            );
-            if (vector) {
-              const shape = getShapeOfVector(shapes, vector.id);
+            case CanvasMode.OnLoopSegment: {
+              dispatch([
+                [ActionType.AddCurrentShapeToSelection],
+                [ActionType.CreateSingularVector, position],
+                [ActionType.AssignCurrentVectorToCurrentShape],
+                [ActionType.FinalizeCurrentShape],
+                [ActionType.SwitchMode, CanvasMode.Move],
+                [ActionType.AddToHistory],
+              ]);
+              break;
+            }
+            case CanvasMode.Draw:
+              dispatch([
+                currentShapeId === StaticShapeId
+                  ? [ActionType.CreateShape]
+                  : [ActionType.Continue],
+                [ActionType.CreateSingularVector, position],
+                [ActionType.AssignCurrentVectorToCurrentShape],
+                [ActionType.AddToHistory],
+              ]);
+              break;
+          }
+        },
+        onDrag: (
+          position: Point,
+          positionWhenStarted: Point,
+          altKey: boolean
+        ) => {
+          switch (mode) {
+            case CanvasMode.Move: {
+              dispatch([
+                [ActionType.SetSelectionRectangle, positionWhenStarted, altKey, position],
+              ]);
+              break;
+            }
+            case CanvasMode.TranslateShape:
+            case CanvasMode.TranslateVector: {
+              dispatch([
+                [ActionType.MoveVector, altKey, positionWhenStarted, position],
+              ]);
+              break;
+            }
+            case CanvasMode.OnLoopSegment:
+            case CanvasMode.OnVector: {
               dispatch([
                 [
-                  ActionType.SwitchMode,
-                  shape &&
-                  currentShapeId === shape[0] &&
-                  isLoopableVectorType(vector.type) &&
-                  (vector as LoopableVector).loopSegment
-                    ? CanvasMode.OnLoopSegment
-                    : CanvasMode.OnVector,
+                  ActionType.SetVectorMatrix,
+                  buildVectorMatrix(vectors, canvas.selection[1][0]),
                 ],
-                [ActionType.SetOnVectorId, vector.id],
+                [ActionType.SwitchMode, CanvasMode.TranslateVector],
               ]);
-            } else {
+              break;
+            }
+            case CanvasMode.DrawCubicVector:
+              dispatch([
+                [ActionType.MoveCubicVectorReflections, position],
+              ]);
+              break;
+            case CanvasMode.Draw:
+              dispatch([
+                currentShapeId === StaticShapeId
+                  ? [ActionType.CreateShape]
+                  : [ActionType.Continue],
+                [ActionType.CreateCubicVector, position],
+                [ActionType.AssignCurrentVectorToCurrentShape],
+                [ActionType.SwitchMode, CanvasMode.DrawCubicVector],
+              ]);
+              break;
+          }
+        },
+        onDragEnd: () => {
+          switch (mode) {
+            case CanvasMode.Move: {
+              dispatch([[ActionType.ClearSelectionRectangle]]);
+              break;
+            }
+            case CanvasMode.TranslateShape:
+              dispatch([
+                [ActionType.SwitchMode, CanvasMode.Move],
+                [ActionType.AddToHistory],
+              ]);
+              break;
+            case CanvasMode.TranslateVector:
               dispatch([
                 [ActionType.SwitchMode, CanvasMode.Draw],
-                [ActionType.SetCursor, position],
-                [ActionType.SetOnVectorId, StaticVectorId],
+                [ActionType.AddToHistory],
               ]);
-            }
+              break;
+            case CanvasMode.DrawCubicVector:
+              dispatch([
+                [ActionType.SwitchMode, CanvasMode.Draw],
+                [ActionType.AddToHistory],
+              ]);
+              break;
           }
-        }
-      },
-      onClick: (position: Point, shiftKey: boolean) => {
-        switch (mode) {
-          case CanvasMode.OnVector: {
-            if (shiftKey) {
-              dispatch([[ActionType.DeleteVector], [ActionType.AddToHistory]]);
-            }
-            break;
-          }
-          case CanvasMode.OnLoopSegment: {
-            const vector = getVectorById(
-              vectors,
-              canvas.selection[1][0][0]
-            ) as LoopableVector;
-            dispatch([
-              [ActionType.SetCursor, vector.position],
-              [ActionType.AddCurrentShapeToSelection],
-              [ActionType.CreateSingularVector],
-              [ActionType.AssignCurrentVectorToCurrentShape],
-              [ActionType.FinalizeCurrentShape],
-              [ActionType.SwitchMode, CanvasMode.Move],
-              [ActionType.AddToHistory],
-            ]);
-            break;
-          }
-          case CanvasMode.Draw:
-            dispatch([
-              [ActionType.SetCursor, position],
-              currentShapeId === StaticShapeId
-                ? [ActionType.CreateShape]
-                : [ActionType.Continue],
-              [ActionType.CreateSingularVector],
-              [ActionType.AssignCurrentVectorToCurrentShape],
-              [ActionType.AddToHistory],
-            ]);
-            break;
-        }
-      },
-      onDrag: (
-        position: Point,
-        positionWhenStarted: Point,
-        altKey: boolean
-      ) => {
-        switch (mode) {
-          case CanvasMode.Move: {
-            dispatch([
-              [ActionType.SetCursor, position],
-              [ActionType.SetSelectionRectangle, positionWhenStarted, altKey],
-            ]);
-            break;
-          }
-          case CanvasMode.TranslateShape:
-          case CanvasMode.TranslateVector: {
-            dispatch([
-              [ActionType.SetCursor, position],
-              [ActionType.MoveVector, altKey, positionWhenStarted],
-            ]);
-            break;
-          }
-          case CanvasMode.OnLoopSegment:
-          case CanvasMode.OnVector: {
-            dispatch([
-              [ActionType.SetCursor, position],
-              [
-                ActionType.SetVectorMatrix,
-                buildVectorMatrix(vectors, canvas.selection[1][0]),
-              ],
-              [ActionType.SwitchMode, CanvasMode.TranslateVector],
-            ]);
-            break;
-          }
-          case CanvasMode.DrawCubicVector:
-            dispatch([
-              [ActionType.SetCursor, position],
-              [ActionType.MoveCubicVectorReflections],
-            ]);
-            break;
-          case CanvasMode.Draw:
-            dispatch([
-              [ActionType.SetCursor, position],
-              currentShapeId === StaticShapeId
-                ? [ActionType.CreateShape]
-                : [ActionType.Continue],
-              [ActionType.CreateCubicVector],
-              [ActionType.AssignCurrentVectorToCurrentShape],
-              [ActionType.SwitchMode, CanvasMode.DrawCubicVector],
-            ]);
-            break;
-        }
-      },
-      onDragEnd: () => {
-        switch (mode) {
-          case CanvasMode.Move: {
-            dispatch([[ActionType.ClearSelectionRectangle]]);
-            break;
-          }
-          case CanvasMode.TranslateShape:
-            dispatch([
-              [ActionType.SwitchMode, CanvasMode.Move],
-              [ActionType.AddToHistory],
-            ]);
-            break;
-          case CanvasMode.TranslateVector:
-            dispatch([
-              [ActionType.SwitchMode, CanvasMode.Draw],
-              [ActionType.AddToHistory],
-            ]);
-            break;
-          case CanvasMode.DrawCubicVector:
-            dispatch([
-              [ActionType.SwitchMode, CanvasMode.Draw],
-              [ActionType.AddToHistory],
-            ]);
-            break;
-        }
-      },
-      onDoubleClick: (position: Point) => {
-        switch (mode) {
-          case CanvasMode.Move:
-            const shapeIds = canvas.selection[1][1];
-            const shapeId = shapeIds.find((shapeId) => {
-              const shape = getShapeById(shapes, shapeId);
-              const boundingBox = boundingBoxFromPoints(
-                shape[1].map(
-                  (vectorId) => getVectorById(vectors, vectorId).position
-                )
+        },
+        onDoubleClick: (position: Point) => {
+          switch (mode) {
+            case CanvasMode.Move:
+              const shapeIds = canvas.selection[1][1];
+              const shapeId = shapeIds.find((shapeId) => {
+                const shape = getShapeById(shapes, shapeId);
+                const boundingBox = boundingBoxFromPoints(
+                  shape[1].map(
+                    (vectorId) => getVectorById(vectors, vectorId).position
+                  )
+                );
+                return isPointInBoundingBox(position, boundingBox);
+              });
+              dispatch(
+                shapeId
+                  ? [
+                      [ActionType.SetCurrentShapeId, shapeId],
+                      [ActionType.SwitchMode, CanvasMode.Draw],
+                    ]
+                  : [[ActionType.SwitchMode, CanvasMode.Draw]]
               );
-              return isPointInBoundingBox(position, boundingBox);
-            });
-            dispatch(
-              shapeId
-                ? [
-                    [ActionType.SetCurrentShapeId, shapeId],
-                    [ActionType.SwitchMode, CanvasMode.Draw],
-                  ]
-                : [[ActionType.SwitchMode, CanvasMode.Draw]]
-            );
-            break;
-        }
-      },
-    }),
-  ];
+              break;
+          }
+        },
+      }),
+    ]
+  }, [canvas, currentShapeId, mode, shapes, vectors]);
   return (
     <div className="Container">
       <div className={"Header"}>

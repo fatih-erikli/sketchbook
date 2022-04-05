@@ -1,5 +1,4 @@
 import { CanvasMode } from "./CanvasMode";
-import { Color } from "./Color";
 import { Point } from "./Point";
 import { ShapeId } from "./Shape";
 import { Style } from "./Style";
@@ -7,7 +6,6 @@ import { VectorId, VectorPositionMatrix } from "./Vector";
 
 export enum ActionType {
   SwitchMode,
-  SetCursor,
   CreateCubicVector,
   MoveCubicVectorReflections,
   CreateSingularVector,
@@ -39,22 +37,21 @@ export enum ActionType {
 
 export type Action =
   | [ActionType.SwitchMode, CanvasMode]
-  | [ActionType.SetCursor, Point]
-  | [ActionType.CreateCubicVector]
+  | [ActionType.CreateCubicVector, Point]
   // -- keep in history
-  | [ActionType.MoveCubicVectorReflections]
-  | [ActionType.CreateSingularVector]
+  | [ActionType.MoveCubicVectorReflections, Point]
+  | [ActionType.CreateSingularVector, Point]
   | [ActionType.CreateShape]
   | [ActionType.Continue]
   | [ActionType.Break]
   | [ActionType.AssignCurrentVectorToCurrentShape]
-  | [ActionType.SetOnVectorId, VectorId]
-  | [ActionType.MoveVector, boolean, Point]
+  | [ActionType.SetOnVectorId, VectorId, Point]
+  | [ActionType.MoveVector, boolean, Point, Point]
   // -- keep in history: FinalizeMoveVector
   | [ActionType.SetVectorMatrix, VectorPositionMatrix]
   | [ActionType.BreakCubicCurveReflections]
   | [ActionType.FinalizeCurrentShape]
-  | [ActionType.SetSelectionRectangle, Point, boolean]
+  | [ActionType.SetSelectionRectangle, Point, boolean, Point]
   | [ActionType.ClearSelectionRectangle]
   | [ActionType.AddCurrentShapeToSelection]
   | [ActionType.SetCurrentShapeId, ShapeId]

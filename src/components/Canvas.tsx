@@ -1,4 +1,4 @@
-import { ForwardedRef, forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { ForwardedRef, forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { DPI } from "../constants/rendering";
 import { distance, PointInvisible } from "../struct/Point";
 import { Point } from "../types/Point";
@@ -72,82 +72,85 @@ const CanvasElement = forwardRef<CanvasDefinition, CanvasElementProps>(
         context.fill(path);
       }
     }, [paths]);
+    const style = useMemo(() => {
+      return {
+        width: width / 2,
+        height: height / 2,
+      }
+    }, [width, height]);
+    const handleOnDoubleClick = useCallback((event) => {
+      if (!ref.current) {
+        return;
+      }
+      onDoubleClick(pointFromEventTarget(event, ref.current));
+    }, [onDoubleClick]);
+    const handleOnMouseDown = useCallback((event) => {
+      if (!ref.current) {
+        return;
+      }
 
+      cursorWhenPressed.current = pointFromEventTarget(event, ref.current);
+    }, []);
+    const handleOnMouseMove = useCallback((event) => {
+      if (!ref.current) {
+        return;
+      }
+
+      const cursorCurrentPosition = pointFromEventTarget(
+        event,
+        ref.current
+      );
+      const distanceToCursor = distance(
+        cursorCurrentPosition,
+        cursorWhenPressed.current
+      );
+
+      if (
+        isDragEndFired.current === false ||
+        (event.buttons === 1 && distanceToCursor > 1)
+      ) {
+        if (isDragEndFired.current === true) {
+          isDragEndFired.current = false;
+        }
+        onDrag(cursorCurrentPosition, cursorWhenPressed.current, event.altKey);
+      } else {
+        onMove(cursorCurrentPosition, event.altKey);
+      }
+    }, [onDrag, onMove]);
+    const handleOnMouseUp = useCallback((event) => {
+      if (!ref.current) {
+        return;
+      }
+
+      const cursorCurrentPosition = pointFromEventTarget(
+        event,
+        ref.current
+      );
+
+      if (isDragEndFired.current) {
+        onClick(cursorCurrentPosition, event.shiftKey);
+      } else {
+        onDragEnd(event.altKey);
+        isDragEndFired.current = true;
+      }
+
+      if (!isDragEndFired.current) {
+        isDragEndFired.current = true;
+      }
+
+      if (cursorWhenPressed.current) {
+        cursorWhenPressed.current = PointInvisible;
+      }
+    }, [onClick, onDragEnd]);
     return (
       <canvas
+        className={'AbsolutePosition'}
         ref={ref}
-        onDoubleClick={(event) => {
-          if (!ref.current) {
-            return;
-          }
-          onDoubleClick(pointFromEventTarget(event, ref.current));
-        }}
-        onDragOver={(event) => {
-          event.preventDefault();
-        }}
-        onMouseDown={(event) => {
-          if (!ref.current) {
-            return;
-          }
-
-          cursorWhenPressed.current = pointFromEventTarget(event, ref.current);
-        }}
-        onMouseMove={(event) => {
-          if (!ref.current) {
-            return;
-          }
-
-          const cursorCurrentPosition = pointFromEventTarget(
-            event,
-            ref.current
-          );
-          const distanceToCursor = distance(
-            cursorCurrentPosition,
-            cursorWhenPressed.current
-          );
-
-          if (
-            isDragEndFired.current === false ||
-            (event.buttons === 1 && distanceToCursor > 1)
-          ) {
-            if (isDragEndFired.current === true) {
-              isDragEndFired.current = false;
-            }
-            onDrag(cursorCurrentPosition, cursorWhenPressed.current, event.altKey);
-          } else {
-            onMove(cursorCurrentPosition, event.altKey);
-          }
-        }}
-        onMouseUp={(event) => {
-          if (!ref.current) {
-            return;
-          }
-
-          const cursorCurrentPosition = pointFromEventTarget(
-            event,
-            ref.current
-          );
-
-          if (isDragEndFired.current) {
-            onClick(cursorCurrentPosition, event.shiftKey);
-          } else {
-            onDragEnd(event.altKey);
-            isDragEndFired.current = true;
-          }
-
-          if (!isDragEndFired.current) {
-            isDragEndFired.current = true;
-          }
-
-          if (cursorWhenPressed.current) {
-            cursorWhenPressed.current = PointInvisible;
-          }
-        }}
-        style={{
-          width: width / 2,
-          height: height / 2,
-          position: "absolute",
-        }}
+        onDoubleClick={handleOnDoubleClick}
+        onMouseDown={handleOnMouseDown}
+        onMouseMove={handleOnMouseMove}
+        onMouseUp={handleOnMouseUp}
+        style={style}
         width={width}
         height={height}
       ></canvas>
