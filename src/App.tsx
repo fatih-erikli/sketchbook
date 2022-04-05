@@ -703,15 +703,15 @@ function App() {
         <h1>Sketchbook</h1>
       </div>
       <ColorPickers
-        documentColors={[WhiteTransparent, Black].concat([...shapes.reduce(
+        documentColors={[...shapes.reduce(
           (prev, shape) => {
             const [fill, stroke] = shape[2];
             prev.add(toHex(fill));
             prev.add(toHex(stroke));
             return prev
           },
-          new Set<string>()
-        )].map((hex) => parseHex(hex)))}
+          new Set<string>(["#ffffff00", "#000000ff"])
+        )].map((hex) => parseHex(hex))}
         style={canvas.style}
         onStyleChange={(style) => {
           dispatch([
