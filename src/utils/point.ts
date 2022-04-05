@@ -12,7 +12,10 @@ export const pointFromEventTarget = (
   event: any,
   relativeTo?: SVGElement | HTMLElement
 ) => {
-  let point: Point = [event.clientX, event.clientY];
+  let point: Point = [
+    event.clientX + event.movementX,
+    event.clientY + event.movementY,
+  ];
   if (relativeTo) {
     point = subtract(point, pointFromHTMLBoundingBox(relativeTo));
   }
