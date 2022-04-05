@@ -57,6 +57,7 @@ import {
   isPointInBoundingBox,
 } from "./struct/BoundingBox";
 import { Black, parseHex, toHex, WhiteTransparent } from "./utils/color";
+import { CanvasContent } from "./types/CanvasContent";
 
 const keyCombinations: KeyCombination[] = [
   ["KeyP", Translate.STD, [ActionType.SwitchMode, CanvasMode.Draw]],
@@ -269,7 +270,10 @@ const reducer = (state: Canvas, actions: Action[]) => {
         }
         if (action[2] && smallestIntersectingShape) {
           state = canvas(state, {
-            selection: [selectionBoundingBox, [[], [smallestIntersectingShape[0]]]],
+            selection: [
+              selectionBoundingBox,
+              [[], [smallestIntersectingShape[0]]],
+            ],
           });
         } else {
           state = canvas(state, {
@@ -336,10 +340,7 @@ const reducer = (state: Canvas, actions: Action[]) => {
                 vectors,
                 (fromLeft as CubicVector).right
               );
-              const differenceToOrigin = subtract(
-                action[3],
-                fromLeft.position
-              );
+              const differenceToOrigin = subtract(action[3], fromLeft.position);
               patchedVectors = updateVectorsById(patchedVectors, {
                 [vectorOnRight.id]: {
                   position: subtract(fromLeft.position, differenceToOrigin),
@@ -485,25 +486,34 @@ function App() {
   const [canvas, dispatch] = useReducer(reducer, defaultCanvas);
   const [mode, shapes, vectors, currentShapeId] = canvas.snapshot;
   useKeyCombinations(keyCombinations, dispatch);
+  const selectionRectangleCanvasContent = useMemo((): CanvasContent[] => {
+    return [
+      [
+        vectorsToPath2d(boundingBoxToVectors(canvas.selection[0])),
+        [WhiteTransparent, Black, 1],
+      ],
+    ];
+  }, [canvas.selection]);
+  const pointsCanvasContent = useMemo(() => {
+    return canvasContentForPoints(canvas.snapshot);
+  }, [canvas.snapshot]);
+  const canvasContentBoundingBoxes = useMemo(() => {
+    return canvasContentForBoundingBoxes(canvas.snapshot, canvas.selection);
+  }, [canvas.snapshot, canvas.selection]);
   const canvasElements: CanvasElement[] = useMemo(() => {
     return [
       canvasElement({ htmlId: "nextVectorPreview" }),
       canvasElement({
         htmlId: "points",
-        content: canvasContentForPoints(canvas),
+        content: pointsCanvasContent,
       }),
       canvasElement({
         htmlId: "boundingBoxes",
-        content: canvasContentForBoundingBoxes(canvas),
+        content: canvasContentBoundingBoxes,
       }),
       canvasElement({
         htmlId: "selectionRectangle",
-        content: [
-          [
-            vectorsToPath2d(boundingBoxToVectors(canvas.selection[0])),
-            [WhiteTransparent, Black, 1],
-          ],
-        ],
+        content: selectionRectangleCanvasContent,
       }),
       canvasElement({
         htmlId: "drawing",
@@ -569,7 +579,10 @@ function App() {
           switch (mode) {
             case CanvasMode.OnVector: {
               if (shiftKey) {
-                dispatch([[ActionType.DeleteVector], [ActionType.AddToHistory]]);
+                dispatch([
+                  [ActionType.DeleteVector],
+                  [ActionType.AddToHistory],
+                ]);
               }
               break;
             }
@@ -604,7 +617,12 @@ function App() {
           switch (mode) {
             case CanvasMode.Move: {
               dispatch([
-                [ActionType.SetSelectionRectangle, positionWhenStarted, altKey, position],
+                [
+                  ActionType.SetSelectionRectangle,
+                  positionWhenStarted,
+                  altKey,
+                  position,
+                ],
               ]);
               break;
             }
@@ -627,9 +645,7 @@ function App() {
               break;
             }
             case CanvasMode.DrawCubicVector:
-              dispatch([
-                [ActionType.MoveCubicVectorReflections, position],
-              ]);
+              dispatch([[ActionType.MoveCubicVectorReflections, position]]);
               break;
             case CanvasMode.Draw:
               dispatch([
@@ -694,8 +710,17 @@ function App() {
           }
         },
       }),
-    ]
-  }, [canvas, currentShapeId, mode, shapes, vectors]);
+    ];
+  }, [
+    canvas,
+    currentShapeId,
+    mode,
+    shapes,
+    vectors,
+    canvasContentBoundingBoxes,
+    pointsCanvasContent,
+    selectionRectangleCanvasContent,
+  ]);
   return (
     <div className="Container">
       <div className={"Header"}>
@@ -703,21 +728,17 @@ function App() {
         <h1>Sketchbook</h1>
       </div>
       <ColorPickers
-        documentColors={[...shapes.reduce(
-          (prev, shape) => {
+        documentColors={[
+          ...shapes.reduce((prev, shape) => {
             const [fill, stroke] = shape[2];
             prev.add(toHex(fill));
             prev.add(toHex(stroke));
-            return prev
-          },
-          new Set<string>(["#ffffff00", "#000000ff"])
-        )].map((hex) => parseHex(hex))}
+            return prev;
+          }, new Set<string>(["#ffffff00", "#000000ff"])),
+        ].map((hex) => parseHex(hex))}
         style={canvas.style}
         onStyleChange={(style) => {
-          dispatch([
-            [ActionType.SetStyle, style],
-            [ActionType.AddToHistory],
-          ]);
+          dispatch([[ActionType.SetStyle, style], [ActionType.AddToHistory]]);
         }}
       />
       <div className="Canvas">

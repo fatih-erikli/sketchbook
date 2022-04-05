@@ -5,14 +5,14 @@ import { Style } from "./Style";
 import { VectorId, VectorPositionMap } from "./Vector";
 
 export enum ActionType {
+  Break,
+  Continue,
   SwitchMode,
   CreateCubicVector,
   MoveCubicVectorReflections,
   CreateSingularVector,
   CreateShape,
   AssignCurrentVectorToCurrentShape,
-  Continue,
-  Break,
   SetOnVectorId,
   MoveVector,
   SetVectorPositionMap,

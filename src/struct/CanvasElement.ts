@@ -1,7 +1,8 @@
-import { Canvas } from "../types/Canvas";
+import { Canvas, CanvasSelection } from "../types/Canvas";
 import { CanvasContent } from "../types/CanvasContent";
 import { CanvasElement } from "../types/CanvasElement";
 import { CanvasMode } from "../types/CanvasMode";
+import { Snapshot } from "../types/Snapshot";
 import { VectorType } from "../types/Vector";
 import { Aqua, Black, Blue, WhiteTransparent } from "../utils/color";
 import {
@@ -28,8 +29,8 @@ export const canvasElement = (
   };
 };
 
-export const canvasContentForPoints = (canvas: Canvas): CanvasContent[] => {
-  const [mode, shapes, vectors, currentShapeId] = canvas.snapshot;
+export const canvasContentForPoints = (snapshot: Snapshot): CanvasContent[] => {
+  const [mode, shapes, vectors, currentShapeId] = snapshot;
   let canvasContentForPoints: CanvasContent[];
   const currentShape = getShapeById(shapes, currentShapeId);
   switch (mode) {
@@ -65,7 +66,7 @@ export const canvasContentForPoints = (canvas: Canvas): CanvasContent[] => {
                 CanvasMode.OnVector,
                 CanvasMode.OnLoopSegment,
                 CanvasMode.TranslateVector,
-              ].includes(mode) && canvas.selection[1][0].includes(vector.id)
+              ].includes(mode)
                 ? mode === CanvasMode.OnLoopSegment
                   ? Blue
                   : Aqua
@@ -85,9 +86,10 @@ export const canvasContentForPoints = (canvas: Canvas): CanvasContent[] => {
 };
 
 export const canvasContentForBoundingBoxes = (
-  canvas: Canvas
+  snapshot: Snapshot,
+  selection: CanvasSelection,
 ): CanvasContent[] => {
-  const [mode, shapes, vectors] = canvas.snapshot;
+  const [mode, shapes, vectors] = snapshot;
   let canvasContentForBoundingBoxes: CanvasContent[];
   switch (mode) {
     case CanvasMode.TranslateShape:
@@ -97,7 +99,7 @@ export const canvasContentForBoundingBoxes = (
           vectorsToPath2d(
             boundingBoxToVectors(
               boundingBoxFromPoints(
-                pointsFromShapeIds(shapes, vectors, canvas.selection[1][1])
+                pointsFromShapeIds(shapes, vectors, selection[1][1])
               )
             )
           ),

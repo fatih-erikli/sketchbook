@@ -6,11 +6,13 @@ import { Snapshot } from "./Snapshot";
 import { Style } from "./Style";
 import { VectorId, VectorPositionMap, } from "./Vector";
 
+export type CanvasSelection = [
+  rect: BoundingBox,
+  covers: [VectorId[], ShapeId[]],
+];
+
 export type Canvas = {
-  selection: [
-    rect: BoundingBox,
-    covers: [VectorId[], ShapeId[]],
-  ],
+  selection: CanvasSelection,
   snapshot: Snapshot,
   past: Snapshot[],
   future: Snapshot[],
