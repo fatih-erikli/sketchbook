@@ -28,7 +28,7 @@ import { Point } from "./types/Point";
 import { uuidv4 } from "./utils/common";
 import { Shape } from "./types/Shape";
 import {
-  buildVectorMatrix,
+  buildVectorPositionMap,
   cubicVector,
   findVectorCloserTo,
   getShapeOfVector,
@@ -278,7 +278,7 @@ const reducer = (state: Canvas, actions: Action[]) => {
         }
         break;
       }
-      case ActionType.SetVectorMatrix: {
+      case ActionType.SetVectorPositionMap: {
         state = canvas(state, { translatedVectorPositions: action[1] });
         break;
       }
@@ -619,8 +619,8 @@ function App() {
             case CanvasMode.OnVector: {
               dispatch([
                 [
-                  ActionType.SetVectorMatrix,
-                  buildVectorMatrix(vectors, canvas.selection[1][0]),
+                  ActionType.SetVectorPositionMap,
+                  buildVectorPositionMap(vectors, canvas.selection[1][0]),
                 ],
                 [ActionType.SwitchMode, CanvasMode.TranslateVector],
               ]);

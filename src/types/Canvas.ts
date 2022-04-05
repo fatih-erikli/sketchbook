@@ -4,7 +4,7 @@ import { ShapeId } from "./Shape";
 import { Snapshot } from "./Snapshot";
 
 import { Style } from "./Style";
-import { VectorId, VectorPositionMatrix, } from "./Vector";
+import { VectorId, VectorPositionMap, } from "./Vector";
 
 export type Canvas = {
   selection: [
@@ -16,5 +16,5 @@ export type Canvas = {
   future: Snapshot[],
   style: Style,
   cursor: Point,
-  translatedVectorPositions: VectorPositionMatrix;
+  translatedVectorPositions: VectorPositionMap;
 };

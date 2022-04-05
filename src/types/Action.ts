@@ -2,7 +2,7 @@ import { CanvasMode } from "./CanvasMode";
 import { Point } from "./Point";
 import { ShapeId } from "./Shape";
 import { Style } from "./Style";
-import { VectorId, VectorPositionMatrix } from "./Vector";
+import { VectorId, VectorPositionMap } from "./Vector";
 
 export enum ActionType {
   SwitchMode,
@@ -15,7 +15,7 @@ export enum ActionType {
   Break,
   SetOnVectorId,
   MoveVector,
-  SetVectorMatrix,
+  SetVectorPositionMap,
   BreakCubicCurveReflections,
   FinalizeCurrentShape,
   SetSelectionRectangle,
@@ -48,7 +48,7 @@ export type Action =
   | [ActionType.SetOnVectorId, VectorId, Point]
   | [ActionType.MoveVector, boolean, Point, Point]
   // -- keep in history: FinalizeMoveVector
-  | [ActionType.SetVectorMatrix, VectorPositionMatrix]
+  | [ActionType.SetVectorPositionMap, VectorPositionMap]
   | [ActionType.BreakCubicCurveReflections]
   | [ActionType.FinalizeCurrentShape]
   | [ActionType.SetSelectionRectangle, Point, boolean, Point]

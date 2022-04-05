@@ -7,7 +7,7 @@ import {
   SingularVector,
   Vector,
   VectorId,
-  VectorPositionMatrix,
+  VectorPositionMap,
   VectorType,
 } from "../types/Vector";
 import { uuidv4 } from "../utils/common";
@@ -132,11 +132,11 @@ export const findVectorCloserTo = (
   return vectors.find((vector) => distance(position, vector.position) < radius);
 };
 
-export const buildVectorMatrix = (
+export const buildVectorPositionMap = (
   vectors: Vector[],
   vectorIds: VectorId[]
-): VectorPositionMatrix => {
-  let matrix: VectorPositionMatrix = {};
+): VectorPositionMap => {
+  let matrix: VectorPositionMap = {};
   for (const vectorId of vectorIds) {
     const vector = getVectorById(vectors, vectorId);
     switch (vector.type) {

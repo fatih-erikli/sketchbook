@@ -9,7 +9,7 @@ export enum VectorType {
   Reflection,
 }
 
-export type VectorPositionMatrix = Record<VectorId, Point>;
+export type VectorPositionMap = Record<VectorId, Point>;
 
 export type WithPosition = {
   position: Point;
