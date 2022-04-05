@@ -4,11 +4,13 @@ import { Style } from "../types/Style";
 import { ColorPicker } from "./ColorPicker";
 
 export const ColorPickers: FC<{
+  documentColors: Color[],
   style: Style;
   onStyleChange: (style: Style) => void;
 }> = ({
   style,
   onStyleChange,
+  documentColors,
 }) => {
   return (
     <div className={"ColorPickers"}>
@@ -16,13 +18,13 @@ export const ColorPickers: FC<{
         onChange={(color: Color) => {onStyleChange([color, style[1], style[2]])}}
         label={"Fill color"}
         color={style[0]}
-        documentColors={[]}
+        documentColors={documentColors}
       />
       <ColorPicker
         label={"Stroke color"}
         onChange={(color: Color) => {onStyleChange([style[0], color, style[2]])}}
         color={style[1]}
-        documentColors={[]}
+        documentColors={documentColors}
       />
     </div>
   );

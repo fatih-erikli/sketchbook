@@ -127,10 +127,7 @@ export const GradientCanvas: FC<{
   const onTouchDown = (event: any) => {
     if (event.touches === 0) return;
     const [position] = event.touches;
-    setPickerPositionPageCoordinates([
-      position.clientX,
-      position.clientY,
-    ]);
+    setPickerPositionPageCoordinates([position.clientX, position.clientY]);
   };
   const onTouchMove = (event: any) => {
     if (event.touches === 0) return;
@@ -160,7 +157,8 @@ export const GradientCanvas: FC<{
     if (!canvas.current) return;
     const context = canvas.current.getContext("2d");
     if (!context) return;
-    const colorData = context.getImageData(position[0], position[1], 1, 1).data!;
+    const colorData = context.getImageData(position[0], position[1], 1, 1)
+      .data!;
     if (colorData[3] === 0) {
       return WhiteOpaque;
     }
@@ -229,6 +227,9 @@ export const ColorPicker: FC<{
   const handleOnBlur = (event: any) => {
     const target = event.target as HTMLElement;
     let parent = target.parentElement;
+    if (target.matches("button")) {
+      return;
+    }
     while (parent) {
       if (Object.is(gradientsContainerRef.current, parent)) {
         return;
@@ -283,10 +284,7 @@ export const ColorPicker: FC<{
               width={shadeGradientWidth}
               height={shadeGradientHeight}
               onSelect={onChange}
-              initialPickerPosition={[
-                shadeGradientWidth - 5,
-                pickerSize + 4,
-              ]}
+              initialPickerPosition={[shadeGradientWidth - 5, pickerSize + 4]}
               gradients={[
                 {
                   direction: "to-right",

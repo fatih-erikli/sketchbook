@@ -1,4 +1,3 @@
-import { CommandInput } from "./components/CommandInput";
 import { useReducer } from "react";
 import { CanvasMode } from "./types/CanvasMode";
 
@@ -57,7 +56,7 @@ import {
   boundingBoxToVectors,
   isPointInBoundingBox,
 } from "./struct/BoundingBox";
-import { Black, WhiteTransparent } from "./utils/color";
+import { Black, parseHex, toHex, WhiteTransparent } from "./utils/color";
 
 const keyCombinations: KeyCombination[] = [
   ["KeyP", Translate.STD, [ActionType.SwitchMode, CanvasMode.Draw]],
@@ -717,6 +716,15 @@ function App() {
         <h1>Sketchbook</h1>
       </div>
       <ColorPickers
+        documentColors={[WhiteTransparent, Black].concat([...shapes.reduce(
+          (prev, shape) => {
+            const [fill, stroke] = shape[2];
+            prev.add(toHex(fill));
+            prev.add(toHex(stroke));
+            return prev
+          },
+          new Set<string>()
+        )].map((hex) => parseHex(hex)))}
         style={canvas.style}
         onStyleChange={(style) => {
           dispatch([
