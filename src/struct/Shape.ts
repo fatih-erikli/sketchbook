@@ -1,12 +1,12 @@
 import { Shape, ShapeId } from "../types/Shape";
 import { Vector } from "../types/Vector";
 import { Black, WhiteTransparent } from "../utils/color";
-import { getVectorById, StaticShapeId } from "./Canvas";
+import { getVectorById, EmptyDocumentNewShapeId } from "./Canvas";
 
 export const getShapeById = (shapes: Shape[], id: ShapeId) => {
   return (
     shapes.find((shape) => shape[0] === id) || [
-      StaticShapeId,
+      EmptyDocumentNewShapeId,
       [],
       [WhiteTransparent, Black, 1],
     ]

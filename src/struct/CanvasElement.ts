@@ -1,4 +1,4 @@
-import { Canvas, CanvasSelection } from "../types/Canvas";
+import { CanvasSelection } from "../types/Canvas";
 import { CanvasContent } from "../types/CanvasContent";
 import { CanvasElement } from "../types/CanvasElement";
 import { CanvasMode } from "../types/CanvasMode";

@@ -15,11 +15,11 @@ import { isPointInBoundingBox } from "./BoundingBox";
 import { getVectorById } from "./Canvas";
 import { applyDPI, distance, PointInvisible } from "./Point";
 
-export const StaticVectorId = uuidv4();
+export const EmptyDocumentNewVectorId = uuidv4();
 
 export const singularVector = (
   position: Point = PointInvisible,
-  vectorId: VectorId = StaticVectorId,
+  vectorId: VectorId = EmptyDocumentNewVectorId,
   isLoopSegment: boolean = false
 ): SingularVector => {
   return {
@@ -32,22 +32,22 @@ export const singularVector = (
 
 export const reflectionVector = (
   position: Point = PointInvisible,
-  vectorId: VectorId = StaticVectorId
+  vectorId: VectorId = EmptyDocumentNewVectorId
 ): ReflectionVector => {
   return { type: VectorType.Reflection, position, id: vectorId };
 };
 
 export const cubicVector = (
   position: Point = PointInvisible,
-  vectorId: VectorId = StaticVectorId,
+  vectorId: VectorId = EmptyDocumentNewVectorId,
   isLoopSegment: boolean = false
 ): CubicVector => {
   return {
     type: VectorType.Cubic,
     position,
     id: vectorId,
-    left: StaticVectorId,
-    right: StaticVectorId,
+    left: EmptyDocumentNewVectorId,
+    right: EmptyDocumentNewVectorId,
     loopSegment: isLoopSegment,
   };
 };

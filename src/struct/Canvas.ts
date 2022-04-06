@@ -7,11 +7,11 @@ import { merge } from "../utils/object";
 import { boundingBox } from "./BoundingBox";
 import { PointInvisible } from "./Point";
 import { style } from "./Style";
-import { StaticVectorId } from "./vector";
-export const StaticShapeId: ShapeId = uuidv4();
+import { EmptyDocumentNewVectorId } from "./vector";
+export const EmptyDocumentNewShapeId: ShapeId = uuidv4();
 export const defaultCanvas: Canvas = {
   selection: [boundingBox(), [[], []]],
-  snapshot: [CanvasMode.Draw, [], [], StaticShapeId, StaticVectorId],
+  snapshot: [CanvasMode.Draw, [], [], EmptyDocumentNewShapeId, EmptyDocumentNewVectorId],
   past: [],
   future: [],
   style: style(),

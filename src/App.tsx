@@ -14,7 +14,7 @@ import {
   canvas,
   defaultCanvas,
   getVectorById,
-  StaticShapeId,
+  EmptyDocumentNewShapeId,
   updateVectorsById,
 } from "./struct/Canvas";
 import { CanvasElement } from "./types/CanvasElement";
@@ -35,8 +35,8 @@ import {
   isLoopableVectorType,
   reflectionVector,
   singularVector,
-  StaticVectorId,
   vectorsToPath2d,
+  EmptyDocumentNewVectorId,
 } from "./struct/vector";
 import { subtract } from "./struct/Point";
 import {
@@ -107,8 +107,8 @@ const reducer = (state: Canvas, actions: Action[]) => {
             CanvasMode.Move,
             shapes,
             vectors,
-            StaticShapeId,
-            StaticVectorId,
+            EmptyDocumentNewShapeId,
+            EmptyDocumentNewVectorId,
           ],
         });
         break;
@@ -234,7 +234,7 @@ const reducer = (state: Canvas, actions: Action[]) => {
       case ActionType.ClearSelection: {
         const [mode, shapes, vectors, ,] = state.snapshot;
         state = canvas(state, {
-          snapshot: [mode, shapes, vectors, StaticShapeId, StaticVectorId],
+          snapshot: [mode, shapes, vectors, EmptyDocumentNewShapeId, EmptyDocumentNewVectorId],
           selection: [boundingBox(), [[], []]],
         });
         break;
@@ -296,7 +296,7 @@ const reducer = (state: Canvas, actions: Action[]) => {
       case ActionType.FinalizeCurrentShape: {
         const [mode, shapes, vectors] = state.snapshot;
         state = canvas(state, {
-          snapshot: [mode, shapes, vectors, StaticShapeId, StaticVectorId],
+          snapshot: [mode, shapes, vectors, EmptyDocumentNewShapeId, EmptyDocumentNewVectorId],
         });
         break;
       }
@@ -463,7 +463,7 @@ const reducer = (state: Canvas, actions: Action[]) => {
       }
       case ActionType.CreateShape: {
         const [drawingMode, shapes, vectors, currentShape] = state.snapshot;
-        if (currentShape === StaticShapeId) {
+        if (currentShape === EmptyDocumentNewShapeId) {
           const shape: Shape = [uuidv4(), [], state.style];
           state = canvas(state, {
             snapshot: [
@@ -471,7 +471,7 @@ const reducer = (state: Canvas, actions: Action[]) => {
               [...shapes, shape],
               vectors,
               shape[0],
-              StaticVectorId,
+              EmptyDocumentNewVectorId,
             ],
           });
         }
@@ -569,7 +569,7 @@ function App() {
               } else {
                 dispatch([
                   [ActionType.SwitchMode, CanvasMode.Draw],
-                  [ActionType.SetOnVectorId, StaticVectorId, position],
+                  [ActionType.SetOnVectorId, EmptyDocumentNewVectorId, position],
                 ]);
               }
             }
@@ -599,7 +599,7 @@ function App() {
             }
             case CanvasMode.Draw:
               dispatch([
-                currentShapeId === StaticShapeId
+                currentShapeId === EmptyDocumentNewShapeId
                   ? [ActionType.CreateShape]
                   : [ActionType.Continue],
                 [ActionType.CreateSingularVector, position],
@@ -649,7 +649,7 @@ function App() {
               break;
             case CanvasMode.Draw:
               dispatch([
-                currentShapeId === StaticShapeId
+                currentShapeId === EmptyDocumentNewShapeId
                   ? [ActionType.CreateShape]
                   : [ActionType.Continue],
                 [ActionType.CreateCubicVector, position],
