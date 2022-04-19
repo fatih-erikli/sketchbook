@@ -44,7 +44,7 @@ export const PlaneTypes = ({
         }}
       >
         <Icon type={showPlaneTypes ? "chevron-down" : "chevron-up"} />
-        XY Plane
+        <span style={{marginRight: "0.5rem"}}>XY Plane</span>
       </button>
     </div>
   );
