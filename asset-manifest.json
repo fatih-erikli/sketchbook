@@ -1,18 +1,18 @@
 {
   "files": {
     "main.css": "/sketchbook/static/css/main.c6bf9a2d.css",
-    "main.js": "/sketchbook/static/js/main.a95d539b.js",
+    "main.js": "/sketchbook/static/js/main.fdf6dd0c.js",
     "static/js/787.4d5ba00b.chunk.js": "/sketchbook/static/js/787.4d5ba00b.chunk.js",
     "static/media/garden.obj": "/sketchbook/static/media/garden.45298f8a4a36d7ac05df.obj",
     "static/media/wireframe-vertex.glsl": "/sketchbook/static/media/wireframe-vertex.1211ae2634ee57841c63.glsl",
     "index.html": "/sketchbook/index.html",
     "static/media/wireframe-fragment.glsl": "/sketchbook/static/media/wireframe-fragment.eb6bf2acdcdaf8d1083d.glsl",
     "main.c6bf9a2d.css.map": "/sketchbook/static/css/main.c6bf9a2d.css.map",
-    "main.a95d539b.js.map": "/sketchbook/static/js/main.a95d539b.js.map",
+    "main.fdf6dd0c.js.map": "/sketchbook/static/js/main.fdf6dd0c.js.map",
     "787.4d5ba00b.chunk.js.map": "/sketchbook/static/js/787.4d5ba00b.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.c6bf9a2d.css",
-    "static/js/main.a95d539b.js"
+    "static/js/main.fdf6dd0c.js"
   ]
 }
