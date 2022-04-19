@@ -5,14 +5,12 @@ body {
   font-size: calc(2px + 2vmin);
   display: grid;
   width: 100vw;
-  
   margin: auto;
   height: calc(100vh - 8px);
   grid-auto-rows: 3rem 64px 1rem auto 3rem;
   grid-auto-columns: 3rem 1fr 1fr 1fr 3rem;
   font-size: 1rem;
 }
-
 .Button {
   color: rgb(21, 21, 21);
   background-color: #fdfdfd;
@@ -23,26 +21,21 @@ body {
   cursor: pointer;
   display: flex;
 }
-
 .ButtonWithLabel svg {
   margin-right: 0.2rem;
   margin-top: 0.2rem;
 }
-
 .ButtonWithLabel--Left svg {
   margin-left: 0.2rem;
 }
-
 .Button:hover {
   color: rgb(21, 21, 21);
 }
-
 .Button:active,
 .Button:focus {
   background-color: black;
   color: white;
 }
-
 .ChosenColor {
   display: inline-block;
   border-radius: 50%;
@@ -52,51 +45,41 @@ body {
   border: 1px solid black;
   margin-left: 0.4rem;
 }
-
 label {
   display: block;
 }
-
 .Button-ColorPicker {
   color: black;
   margin-right: 0.4rem;
   padding-right: 0.2rem;
 }
-
 .Button-ColorPicker:hover,
 .Button-ColorPicker:focus,
 .Button-ColorPicker:active {
   background: #ededed;
   color: black;
 }
-
 .Button-ColorPicker:last-child {
   margin-right: 0;
 }
-
 .Button.IconOnly.Chosen {
   color: #ff65d0;
 }
-
 .IconOnly {
   text-indent: -200vw;
   padding: 0.5rem 0.5rem 0.45rem;
   margin: 0 0.2rem;
 }
-
 .Button.IconOnly:disabled {
   color: #ddd;
 }
-
 .IconOnly.Active {
   background-color: transparent;
 }
-
 .IconOnly.Active path {
   fill: transparent;
   stroke: black;
 }
-
 .Application-Menu {
   background: white;
   color: #0b0b0b;
@@ -107,63 +90,55 @@ label {
   grid-row-end: 3;
   user-select: none;
 }
-
 .Upload-Placeholder {
   padding: 1rem 1rem;
   border: 1px dashed gray;
   margin-bottom: 1rem;
 }
-
 label[for="file-input"] {
   display: inline-block;
   color: blue;
   cursor: pointer;
 }
-
 .Hidden {
   display: none;
 }
-
 .AbsolutePosition {
   position: absolute;
 }
-
 canvas {
   display: flex;
 }
-
 .ColorPicker-Colors {
-  width: 300px;
-  height: 300px;
+  width: 265px;
   background-color: white;
   position: absolute;
   z-index: 9;
-  padding: 1rem 1rem 0 1rem;
+  padding:0.7rem;
   margin-bottom: 1.8rem;
 }
-
+.ColorPicker-Colors canvas {
+  opacity: 0.3;
+}
+.ColorPicker-Colors canvas:hover {
+  opacity: 1;
+}
 .ColorPicker-ColorGrid {
   display: flex;
-  align-items: start;
-  margin-top: 0.2rem;
-  margin-bottom: 0.3rem;
+  flex-wrap: wrap;
 }
-
 .ColorPicker-ColorGrid > span {
   width: 15px;
   height: 15px;
   margin: 1px;
   cursor: pointer;
 }
-
 .ColorPicker-ColorGrid > .Transparent {
   background: white;
 }
-
 .ButtonGroup-Items {
   position: absolute;
 }
-
 .CommandInput {
   display: flex;
   flex-direction: column;
@@ -174,7 +149,6 @@ canvas {
   justify-content: flex-end;
   grid-row-start: 2;
 }
-
 .Commands {
   background-color: #f7f7f7;
   width: 300px;
@@ -184,20 +158,16 @@ canvas {
   top: 7.5rem;
   z-index: 9;
 }
-
 .CommandItem {
   padding: 0.2rem;
   cursor: pointer;
 }
-
 .CommandItem:hover {
   background-color: rgb(255, 245, 187);
 }
-
 .CommandItem.isActive {
   background-color: #FFC28C;
 }
-
 #Logo {
   background: #FFC28C;
   width: 64px;
@@ -205,7 +175,6 @@ canvas {
   display: inline-block;
   margin-right: 0.7rem;
 }
-
 .Header {
   grid-row-start: 2;
   grid-row-end: 2;
@@ -214,32 +183,50 @@ canvas {
   display: flex;
   align-items: flex-end;
 }
-
 .Canvas {
   grid-row-start: 4;
   grid-row-end: 5;
   grid-column-start: 2;
   grid-column-end: 5;
   background-color: #f7f7f7;
-  
-  /* filter: brightness(1) invert(1); */
-}
-
-.ColorPickers {
-  grid-column-start: 1;
-  grid-column-end: 6;
   display: flex;
-  grid-row-start: 6;
-  grid-row-end: 2;
   justify-content: center;
-  align-items: flex-end;
-  padding-bottom: 0.5rem;
+  align-items: center;
+  overflow: hidden;
 }
-
 h1 {
   font-size: 1rem;
   font-weight: normal;
   margin: 0;
   padding-bottom: 0.2rem;
   z-index: 10;
+}
+h3 {
+  font-size: 1rem;
+  margin: 0;
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+  font-weight: normal;
+}
+.color-picker-current-position {
+  z-index: 2;
+  width: 16px;
+  height: 16px;
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: currentColor;
+  border: 1px solid black;
+}
+input[type='range'] {
+  width: 70%;
+}
+.color-channel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem;
+}
+.flex-grow {
+  flex-grow: 1;
 }

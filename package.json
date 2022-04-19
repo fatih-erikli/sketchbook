@@ -10,11 +10,14 @@
     "@types/jest": "^27.0.1",
     "@types/node": "^16.7.13",
     "@types/react": "^17.0.43",
-        "@types/react-dom": "^17.0.14",
-        "classnames": "^2.3.1",
+    "@types/react-dom": "^17.0.14",
+    "classnames": "^2.3.1",
+    "glslify": "^7.1.1",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-scripts": "5.0.0",
+    "regl": "^2.1.0",
+    "styled-components": "^5.3.5",
     "typescript": "^4.4.2",
     "uuid": "^8.3.2",
     "web-vitals": "^2.1.0"
@@ -44,6 +47,7 @@
     ]
   },
   "devDependencies": {
+    "@types/styled-components": "^5.1.25",
     "@types/uuid": "^8.3.3",
     "jest-canvas-mock": "^2.3.1"
   }
