@@ -150,6 +150,9 @@ function App() {
       case PlaneType.Zy:
         setPointAngle(new Float32Array([100, 0]));
         break;
+        case PlaneType.Zx:
+        setPointAngle(new Float32Array([0, 100]));
+        break;
     }
   }, [planeType]);
   const [previousPosition, setPreviousPosition] = useState(
@@ -180,6 +183,15 @@ function App() {
             previousPosition[0],
             lerpy(y),
             -1 * lerpx(x),
+          ]);
+          setPreviousPosition(position);
+          break;
+        }
+        case PlaneType.Zx: {
+          position = new Float32Array([
+            lerpx(x),
+            previousPosition[1],
+            lerpy(y),
           ]);
           setPreviousPosition(position);
           break;
@@ -252,20 +264,7 @@ function App() {
       defaultColor,
     ]
   );
-  useEffect(() => {
-    // const [x, y] = pointAngle;
-    // let newX: number | null = null;
-    // let newY;
-    // if (x > 90 && x < 110 && x!== 100) {
-    //   newX = 100;
-    // }
-    // if (x > -10 && x < 10 && x!== 0) {
-    //   newX = 0;
-    // }
-    // if (newX) {
-    //   setPointAngle(([x, y]) => new Float32Array([newX!, 0]));
-    // }
-  }, [pointAngle]);
+  console.log(pointAngle);
   useEffect(() => {
     // const onWheel = (event: WheelEvent) => {
     //   event.preventDefault();

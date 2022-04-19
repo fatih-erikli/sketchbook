@@ -91,5 +91,6 @@ export type Shape = {
 export enum PlaneType {
   Xy,
   Zy,
+  Zx,
   Perspective,
 }

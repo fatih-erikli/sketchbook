@@ -5,7 +5,7 @@ import { Icon } from "./Icon";
 
 const PlaneTypesRadioInputList = styled.div`
   position: absolute;
-  margin-top: -4.7rem;
+  margin-top: -6.2rem;
   z-index: 8;
 `;
 
@@ -17,7 +17,7 @@ export const PlaneTypes = ({
   onPlaneTypeChange: (planeType: PlaneType) => void;
 }) => {
   const [showPlaneTypes, setShowPlaneTypes] = useState<boolean>(false);
-  const planeTypes = [PlaneType.Xy, PlaneType.Zy, PlaneType.Perspective];
+  const planeTypes = [PlaneType.Xy, PlaneType.Zy, PlaneType.Zx, PlaneType.Perspective];
   return (
     <div>
       {showPlaneTypes && (
