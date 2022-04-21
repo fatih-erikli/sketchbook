@@ -19,35 +19,20 @@ export type Vector = [];
 export enum SketchElementType {
   Vertex,
   Edge,
-  Segment,
-  ControlPoint,
 }
 export type VertexElement = {
   type: SketchElementType.Vertex;
   position: Vec3;
-};
-export type SegmentElement = {
-  type: SketchElementType.Segment;
-  position: Vec3;
-  edgeIndex: number;
-};
-export type ControlPointElement = {
-  type: SketchElementType.ControlPoint;
-  position: Vec3;
-  edgeIndex: number;
-  reflectionOf: number;
+  controlPoints: Vec3[];
 };
 export type EdgeElement = {
   type: SketchElementType.Edge;
   source: number;
   target: number;
-  controlPoints: number[];
   color: Color;
 };
 export type SketchElement =
   | VertexElement
-  | SegmentElement
-  | ControlPointElement
   | EdgeElement;
 export type Sketch = {
   elements: SketchElement[];

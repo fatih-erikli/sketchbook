@@ -121,26 +121,68 @@ function App() {
   }, [canvasSize]);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [planeType, setPlaneType] = useState<PlaneType>(PlaneType.Xy);
+  const [previousPosition, setPreviousPosition] = useState(
+    () => new Float32Array([0, 0, 0])
+  );
   const onPointerMove: PointerEventHandler<HTMLDivElement> = useCallback(
     (event) => {
+      if (event.buttons === 0) {
+        return;
+      }
+      const [x, y] = relativeCoordinatesFromHtmlElement(
+        event,
+        canvasRef.current!
+      );
       switch (planeType) {
         case PlaneType.Perspective: {
           if (canvasRef.current) {
             const parentElement = canvasRef.current.parentElement;
             if (parentElement) {
-              if (event.buttons === 1) {
-                setPointAngle(
-                  ([x, y]) =>
-                    new Float32Array([x + event.movementX, y + event.movementY])
-                );
-              } else {
-              }
+              setPointAngle(
+                ([x, y]) =>
+                  new Float32Array([x + event.movementX, y + event.movementY])
+              );
             }
           }
+          break;
+        }
+        case PlaneType.Xy: {
+          const position = new Float32Array([
+            lerpx(x),
+            lerpy(y),
+            previousPosition[2],
+          ]);
+          setPreviousPosition(position);
+          setElements((elements) =>
+            elements.map((element, index) => {
+              return index === currentSketchElement
+                ? { ...element, controlPoints: [position] }
+                : element;
+            })
+          );
+          break;
+        }
+        case PlaneType.Zy: {
+          const position = new Float32Array([
+            previousPosition[0],
+            lerpy(y),
+            -1 * lerpx(x),
+          ]);
+          setPreviousPosition(position);
+          break;
+        }
+        case PlaneType.Zx: {
+          const position = new Float32Array([
+            lerpx(x),
+            previousPosition[1],
+            lerpy(y),
+          ]);
+          setPreviousPosition(position);
+          break;
         }
       }
     },
-    [planeType]
+    [planeType, lerpx, lerpy, previousPosition]
   );
   useEffect(() => {
     switch (planeType) {
@@ -150,14 +192,11 @@ function App() {
       case PlaneType.Zy:
         setPointAngle(new Float32Array([100, 0]));
         break;
-        case PlaneType.Zx:
+      case PlaneType.Zx:
         setPointAngle(new Float32Array([0, 100]));
         break;
     }
   }, [planeType]);
-  const [previousPosition, setPreviousPosition] = useState(
-    () => new Float32Array([0, 0, 0])
-  );
   const [defaultColor, setDefaultColor] = useState<Color>(
     () => new Uint8ClampedArray([0, 0, 0, 1])
   );
@@ -207,7 +246,6 @@ function App() {
               type: SketchElementType.Edge,
               source: currentSketchElement as number,
               target: 0,
-              controlPoints: [],
               color: defaultColor,
             };
             setSketchMode(SketchMode.CreateSketchElement);
@@ -226,6 +264,7 @@ function App() {
             const vertexElement: VertexElement = {
               type: SketchElementType.Vertex,
               position,
+              controlPoints: [],
             };
             setElements([vertexElement]);
             setCurrentSketchElement(0);
@@ -234,12 +273,12 @@ function App() {
               const vertexElement: VertexElement = {
                 type: SketchElementType.Vertex,
                 position,
+                controlPoints: [],
               };
               const edgeElement: EdgeElement = {
                 type: SketchElementType.Edge,
                 source: currentSketchElement as number,
                 target: elements.length + 1,
-                controlPoints: [],
                 color: defaultColor,
               };
               return [...elements, edgeElement, vertexElement];
@@ -264,19 +303,6 @@ function App() {
       defaultColor,
     ]
   );
-  console.log(pointAngle);
-  useEffect(() => {
-    // const onWheel = (event: WheelEvent) => {
-    //   event.preventDefault();
-    //   setPointAngle(([x, y]) => new Float32Array([x + event.deltaX, y + event.deltaY]))
-    // };
-    // document.body.addEventListener("wheel", onWheel, {
-    //   passive: false
-    // });
-    // return () => {
-    //   document.body.removeEventListener("wheel", onWheel);
-    // }
-  }, []);
   let showControllers;
   showControllers = planeType !== PlaneType.Perspective;
   const onCanvasFeedbackReceived = (feedback: CanvasFeedback) => {
@@ -292,6 +318,31 @@ function App() {
   const onChangeColor = (color: Color) => {
     setDefaultColor(color);
   };
+  useEffect(() => {
+    const onKeyPress = (event: KeyboardEvent) => {
+      switch (event.key) {
+        case "Enter": {
+          setSketchMode(SketchMode.CreateSketchElement);
+            setElements([]);
+            setShapes((shapes) => [
+              ...shapes,
+              {
+                elements: elements,
+                stroke: new Uint8ClampedArray([0, 0, 0, 1]),
+                fill: new Uint8ClampedArray([0, 0, 0, 0]),
+              },
+            ]);
+            setCurrentSketchElement(null);
+            setHoverElementIndex(null);
+          break;
+        }
+      }
+    };
+    document.body.addEventListener('keypress', onKeyPress);
+    return () => {
+      document.body.removeEventListener('keypress', onKeyPress);
+    }
+  }, [elements]);
   return (
     <div className="Container">
       <div className={"Header"}>

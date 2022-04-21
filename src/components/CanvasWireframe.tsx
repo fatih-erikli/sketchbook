@@ -14,11 +14,11 @@ import { lerp } from "../utils/lerp";
 import { transformByMat4 } from "../utils/vector";
 import { toHex } from "./ColorPicker";
 
-const SVG = styled.svg`
+const Svg = styled.svg`
   position: absolute;
 `;
 
-const LINE = styled.line`
+const Line = styled.line`
   pointer-events: none;
 `;
 
@@ -53,6 +53,9 @@ export const CanvasWireframe: FC<{
         return {
           ...element,
           position: positionProjected,
+          controlPoints: element.controlPoints.map((controlPoint) =>
+            transformByMat4(controlPoint, projection.view)
+          ),
         };
       }
       default: {
@@ -97,27 +100,41 @@ export const CanvasWireframe: FC<{
     });
   };
   return (
-    <SVG width={width} height={height}>
+    <Svg width={width} height={height}>
       {showControllers &&
         vertexes.map((vertex, index) => {
           return (
-            <rect
-              onPointerOver={onPointerOver}
-              onPointerOut={onPointerOut}
-              data-vertex-index={index}
-              key={index}
-              fill={"transparent"}
-              stroke={"black"}
-              x={lerpx(vertex.position[0]) - 2}
-              y={lerpy(vertex.position[1]) - 2}
-              width={4}
-              height={4}
-            ></rect>
+            <g key={index}>
+              <rect
+                onPointerOver={onPointerOver}
+                onPointerOut={onPointerOut}
+                data-vertex-index={index}
+                fill={"transparent"}
+                stroke={"black"}
+                x={lerpx(vertex.position[0]) - 2}
+                y={lerpy(vertex.position[1]) - 2}
+                width={4}
+                height={4}
+              />
+              {vertex.controlPoints.map(
+                (controlPoint, index) =>
+                  <rect
+                  key={index}
+                  data-vertex-index={index}
+                  fill={"transparent"}
+                  stroke={"black"}
+                  x={lerpx(controlPoint[0]) - 2}
+                  y={lerpy(controlPoint[1]) - 2}
+                  width={4}
+                  height={4}
+                />
+              )}
+            </g>
           );
         })}
       {edges.map((edge, index) => {
         return (
-          <LINE
+          <Line
             stroke={toHex(edge.color)}
             key={index}
             x1={lerpx((elements[edge.source] as VertexElement).position[0])}
@@ -153,9 +170,9 @@ export const CanvasWireframe: FC<{
           <g key={index}>
             {edges.map((edge, index) => {
               return (
-                <LINE
-                  stroke={toHex(edge.color)}
+                <Line
                   key={index}
+                  stroke={toHex(edge.color)}
                   x1={lerpx(
                     (elements[edge.source] as VertexElement).position[0]
                   )}
@@ -174,6 +191,6 @@ export const CanvasWireframe: FC<{
           </g>
         );
       })}
-    </SVG>
+    </Svg>
   );
 };
