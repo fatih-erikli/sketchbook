@@ -1,8 +1,9 @@
 import { FC } from "react";
 import styled from "styled-components";
-import { Color, PlaneType } from "../types/Sketch";
+import { CanvasMode } from "../types/Canvas";
+import { Color } from "../types/Sketch";
 import { ColorPicker } from "./ColorPicker";
-import { PlaneTypes } from "./PlaneTypes";
+import { SketchModes } from "./SketchModes";
 
 const Tools = styled.div`
 grid-column-start: 1;
@@ -17,21 +18,20 @@ padding-bottom: 0.5rem;
 
 export const Toolbar: FC<{
   documentColors: Color[],
-  planeType: PlaneType;
-  onPlaneTypeChange: (planeType: PlaneType) => void;
   onChangeColor: (color: Color) => void;
   defaultColor: Color;
+  onCanvasModeChange: (canvasMode: CanvasMode) => void;
+  canvasMode: CanvasMode;
 }> = ({
   documentColors,
-  planeType,
-  onPlaneTypeChange,
   onChangeColor,
   defaultColor,
+  onCanvasModeChange,
+  canvasMode,
 }) => {
-  
   return (
     <Tools>
-      <PlaneTypes planeType={planeType} onPlaneTypeChange={onPlaneTypeChange} />
+      <SketchModes canvasMode={canvasMode} onChange={onCanvasModeChange}></SketchModes>
       <ColorPicker
         onChange={(color: Color) => onChangeColor(color)}
         label={"Stroke color"}

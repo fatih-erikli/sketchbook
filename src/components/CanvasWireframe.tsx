@@ -1,5 +1,6 @@
 import { FC, PointerEventHandler, useCallback } from "react";
 import styled from "styled-components";
+import { BoundingBox } from "../types/Canvas";
 import {
   CanvasFeedback,
   CanvasFeedbackType,
@@ -32,6 +33,7 @@ export const CanvasWireframe: FC<{
   height: number;
   elements: SketchElement[];
   onCanvasFeedback: (feedback: CanvasFeedback) => void;
+  selectionBoundingBox: BoundingBox | null;
 }> = ({
   shapes,
   hoverElementIndex,
@@ -42,6 +44,7 @@ export const CanvasWireframe: FC<{
   elements,
   projection,
   onCanvasFeedback,
+  selectionBoundingBox,
 }) => {
   elements = elements.map((element) => {
     switch (element.type) {
@@ -100,7 +103,10 @@ export const CanvasWireframe: FC<{
     });
   };
   return (
-    <Svg width={width} height={height}>
+    <Svg
+      width={width}
+      height={height}
+    > 
       {showControllers &&
         vertexes.map((vertex, index) => {
           return (
@@ -116,9 +122,8 @@ export const CanvasWireframe: FC<{
                 width={4}
                 height={4}
               />
-              {vertex.controlPoints.map(
-                (controlPoint, index) =>
-                  <rect
+              {vertex.controlPoints.map((controlPoint, index) => (
+                <rect
                   key={index}
                   data-vertex-index={index}
                   fill={"transparent"}
@@ -128,7 +133,7 @@ export const CanvasWireframe: FC<{
                   width={4}
                   height={4}
                 />
-              )}
+              ))}
             </g>
           );
         })}

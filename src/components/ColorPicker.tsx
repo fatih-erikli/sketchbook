@@ -1,10 +1,4 @@
-import {
-  FC,
-  MouseEventHandler,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { FC, MouseEventHandler, useEffect, useRef, useState } from "react";
 import { webSafeColors } from "../data/colors";
 import { Color } from "../types/Sketch";
 
@@ -328,7 +322,7 @@ export const ColorPicker: FC<{
           title={label}
           style={{
             background: "#ededed",
-            borderColor: toHex(color)
+            borderColor: toHex(color),
           }}
           className="ChosenColor"
         ></span>

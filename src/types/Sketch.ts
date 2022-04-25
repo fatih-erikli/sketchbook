@@ -1,8 +1,5 @@
 export type Color = Uint8ClampedArray;
-export enum SketchMode {
-  CreateSketchElement,
-  SelectElement,
-}
+
 export type Geometry = {
   object: string;
   groups: string[];
@@ -36,7 +33,6 @@ export type SketchElement =
   | EdgeElement;
 export type Sketch = {
   elements: SketchElement[];
-  sketchMode: SketchMode;
   selectedElements: Uint32Array;
   currentSketchElement: number | null;
 };
@@ -79,3 +75,5 @@ export enum PlaneType {
   Zx,
   Perspective,
 }
+export type Position2d = [number, number];
+

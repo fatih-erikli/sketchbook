@@ -1,5 +1,6 @@
 import "./styles/App.css";
 import "./styles/MediaQueries.css";
+import styled from "styled-components";
 import { Toolbar } from "./components/Toolbar";
 import {
   PointerEventHandler,
@@ -10,98 +11,54 @@ import {
   useState,
   WheelEventHandler,
 } from "react";
-import {
-  CanvasFeedback,
-  CanvasFeedbackType,
-  Color,
-  EdgeElement,
-  Geometry,
-  PlaneType,
-  Shape,
-  Sketch,
-  SketchElement,
-  SketchElementType,
-  SketchMode,
-  Vec2,
-  VertexElement,
-} from "./types/Sketch";
+import { Color } from "./types/Sketch";
 import { parseGeometry } from "./parsers/geometry";
 import { lerp } from "./utils/lerp";
 import { quatFromPointAngle, transformQuat } from "./utils/quat";
 import { inverse, lookAt, multiply, ortho } from "./utils/mat4";
 import { CanvasWireframe } from "./components/CanvasWireframe";
 import { relativeCoordinatesFromHtmlElement } from "./utils/dom";
+import {
+  BoundingBox,
+  CanvasMode,
+  ControlPointLeft,
+  ControlPointRight,
+  Position,
+  Shape,
+  Vector,
+  VectorId,
+  VectorType,
+  Vertex,
+} from "./types/Canvas";
+import { PointCloud } from "./components/PointCloud";
+import { SVGPath } from "./components/SVGPath";
+import { uuidv4 } from "./utils/common";
 
-const vertexShaderUrl = require("./shaders/wireframe-vertex.glsl");
-const fragmentShaderUrl = require("./shaders/wireframe-fragment.glsl");
-const sampleGeometryUrl = require("./geometries/garden.obj");
+const Svg = styled.svg``;
 
 function App() {
+  const [currentVectorId, setCurrentVectorId] = useState<VectorId | null>(null);
+  const [selectedVectorIds, setSelectedVectorIds] = useState<VectorId[]>(
+    () => []
+  );
   const [shapes, setShapes] = useState<Shape[]>([]);
-  const [sketchMode, setSketchMode] = useState<SketchMode>(
-    SketchMode.CreateSketchElement
-  );
-  const [elements, setElements] = useState<SketchElement[]>([]);
-  const [currentSketchElement, setCurrentSketchElement] = useState<
-    null | number
-  >(null);
-  const [hoverElementIndex, setHoverElementIndex] = useState<null | number>(
-    null
-  );
+  const [shapeBuffer, setShapeBuffer] = useState<Shape | null>(null);
+  const [positionBuffer, setPositionBuffer] = useState<{
+    cursor: Position;
+    element: Position[];
+  } | null>(null);
+  const [mode, setMode] = useState<CanvasMode>(CanvasMode.Draw);
   const [canvasSize, setCanvasSize] = useState<{
     width: number;
     height: number;
     devicePixelRatio: number;
   } | null>(null);
-  const [pointAngle, setPointAngle] = useState<Vec2>(
-    () => new Float32Array([0, 0])
-  );
   const [isLoading, setIsLoading] = useState(true);
   const width = canvasSize ? canvasSize.width : 600;
   const height = canvasSize ? canvasSize.height : 400;
-  const devicePixelRatio = canvasSize ? canvasSize.devicePixelRatio : 1;
   useEffect(() => {
     setIsLoading(false);
   }, []);
-  const lerpx = useCallback(
-    (x: number) =>
-      lerp(
-        [0, width],
-        [-(devicePixelRatio * width) / 2, (devicePixelRatio * width) / 2],
-        x
-      ),
-    [width, devicePixelRatio]
-  );
-  const lerpy = useCallback(
-    (y: number) =>
-      lerp(
-        [0, height],
-        [(devicePixelRatio * height) / 2, -(devicePixelRatio * height) / 2],
-        y
-      ),
-    [height, devicePixelRatio]
-  );
-  const projection = useMemo(() => {
-    const cameraTarget = new Float32Array([0, 0, 0]);
-    const cameraPosition = new Float32Array([0, 0, 1]);
-    const projection = ortho(-width, width, -height, height, 4000, -4000);
-    // const projection = perspective(170*Math.PI/180, width/height,1, -4000);
-    const up = new Float32Array([0, 1, 0]);
-    transformQuat(
-      cameraPosition,
-      quatFromPointAngle(new Float32Array([pointAngle[0], pointAngle[1]]), 64),
-      cameraPosition
-    );
-
-    const camera = lookAt(cameraPosition, cameraTarget, up);
-    const view = inverse(camera);
-    return {
-      view,
-      projection: multiply(view, projection),
-      cameraPosition,
-      cameraTarget,
-    };
-  }, [pointAngle, width, height]);
   useEffect(() => {
     const calculate = () => {
       const boundingBox = canvasRef.current!.getBoundingClientRect();
@@ -120,9 +77,8 @@ function App() {
     };
   }, [canvasSize]);
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [planeType, setPlaneType] = useState<PlaneType>(PlaneType.Xy);
-  const [previousPosition, setPreviousPosition] = useState(
-    () => new Float32Array([0, 0, 0])
+  const [dragPosition, setDragPosition] = useState<[number, number] | null>(
+    null
   );
   const onPointerMove: PointerEventHandler<HTMLDivElement> = useCallback(
     (event) => {
@@ -133,216 +89,336 @@ function App() {
         event,
         canvasRef.current!
       );
-      switch (planeType) {
-        case PlaneType.Perspective: {
-          if (canvasRef.current) {
-            const parentElement = canvasRef.current.parentElement;
-            if (parentElement) {
-              setPointAngle(
-                ([x, y]) =>
-                  new Float32Array([x + event.movementX, y + event.movementY])
-              );
-            }
+      switch (mode) {
+        case CanvasMode.Reposition: {
+          if (!positionBuffer) {
+            break;
+          }
+          if (shapeBuffer) {
+            setShapeBuffer((shapeBuffer) => {
+              return {
+                ...shapeBuffer!,
+                vectors: shapeBuffer!.vectors.map((vector) => {
+                  const selectedVectorIdIndex = selectedVectorIds.indexOf(
+                    vector.id
+                  );
+                  if (selectedVectorIdIndex === -1) {
+                    return vector;
+                  }
+                  return {
+                    ...vector,
+                    position: [
+                      positionBuffer.element[selectedVectorIdIndex][0] +
+                        (x - positionBuffer.cursor[0]),
+                      positionBuffer.element[selectedVectorIdIndex][1] +
+                        (y - positionBuffer.cursor[1]),
+                    ],
+                  };
+                }),
+              };
+            });
           }
           break;
         }
-        case PlaneType.Xy: {
-          const position = new Float32Array([
-            lerpx(x),
-            lerpy(y),
-            previousPosition[2],
-          ]);
-          setPreviousPosition(position);
-          setElements((elements) =>
-            elements.map((element, index) => {
-              return index === currentSketchElement
-                ? { ...element, controlPoints: [position] }
-                : element;
-            })
-          );
+        case CanvasMode.Draw: {
+          setShapeBuffer((shapeBuffer) => {
+            return {
+              ...(shapeBuffer as Shape),
+              vectors: (shapeBuffer as Shape).vectors.reduce<Vector[]>(
+                (prev, vector, index, vectors) => {
+                  let vectorsToAdd: Vector[] = [];
+                  switch (vector.type) {
+                    case VectorType.Vertex: {
+                      if (
+                        vector.id !== currentVectorId ||
+                        vector.controlPoints.length > 0
+                      ) {
+                        vectorsToAdd = vectorsToAdd.concat(vector);
+                        break;
+                      }
+                      const leftControlPointId = uuidv4();
+                      const rightControlPointId = uuidv4();
+                      vectorsToAdd = [
+                        {
+                          ...vector,
+                          type: VectorType.Vertex,
+                          controlPoints: [
+                            leftControlPointId,
+                            rightControlPointId,
+                          ],
+                        },
+                        {
+                          id: leftControlPointId,
+                          type: VectorType.ControlPoint,
+                          position: [x, y],
+                          isLeft: true,
+                        },
+                        {
+                          id: rightControlPointId,
+                          type: VectorType.ControlPoint,
+                          position: [
+                            vector.position[0] + (vector.position[0] - x),
+                            vector.position[1] + (vector.position[1] - y),
+                          ],
+                          isRight: true,
+                        },
+                      ];
+                      break;
+                    }
+                    case VectorType.ControlPoint: {
+                      const currentVector = vectors.find(
+                        (vector) => vector.id === currentVectorId
+                      ) as Vertex;
+                      if (!currentVector.controlPoints.includes(vector.id)) {
+                        vectorsToAdd = [vector];
+                        break;
+                      }
+                      if ((vector as ControlPointLeft).isLeft) {
+                        vectorsToAdd = [
+                          {
+                            id: vector.id,
+                            isLeft: true,
+                            type: VectorType.ControlPoint,
+                            position: [x, y],
+                          } as ControlPointLeft,
+                        ];
+                      } else {
+                        vectorsToAdd = [
+                          {
+                            id: vector.id,
+                            isRight: true,
+                            type: VectorType.ControlPoint,
+                            position: [
+                              currentVector.position[0] +
+                                (currentVector.position[0] - x),
+                              currentVector.position[1] +
+                                (currentVector.position[1] - y),
+                            ],
+                          } as ControlPointRight,
+                        ];
+                      }
+                    }
+                  }
+                  return prev.concat(vectorsToAdd);
+                },
+                []
+              ),
+            };
+          });
           break;
         }
-        case PlaneType.Zy: {
-          const position = new Float32Array([
-            previousPosition[0],
-            lerpy(y),
-            -1 * lerpx(x),
-          ]);
-          setPreviousPosition(position);
-          break;
-        }
-        case PlaneType.Zx: {
-          const position = new Float32Array([
-            lerpx(x),
-            previousPosition[1],
-            lerpy(y),
-          ]);
-          setPreviousPosition(position);
+        case CanvasMode.Select: {
+          setDragPosition([x, y]);
           break;
         }
       }
     },
-    [planeType, lerpx, lerpy, previousPosition]
+    [mode, currentVectorId, positionBuffer, selectedVectorIds, shapeBuffer]
   );
-  useEffect(() => {
-    switch (planeType) {
-      case PlaneType.Xy:
-        setPointAngle(new Float32Array([0, 0]));
-        break;
-      case PlaneType.Zy:
-        setPointAngle(new Float32Array([100, 0]));
-        break;
-      case PlaneType.Zx:
-        setPointAngle(new Float32Array([0, 100]));
-        break;
-    }
-  }, [planeType]);
   const [defaultColor, setDefaultColor] = useState<Color>(
     () => new Uint8ClampedArray([0, 0, 0, 1])
   );
+  const [dragStartedPosition, setDragStartedPosition] = useState<
+    [number, number] | null
+  >(null);
   const onPointerDown: PointerEventHandler<HTMLDivElement> = useCallback(
     (event) => {
       const [x, y] = relativeCoordinatesFromHtmlElement(
         event,
         canvasRef.current!
       );
-      let position: Float32Array;
-      switch (planeType) {
-        case PlaneType.Xy: {
-          position = new Float32Array([
-            lerpx(x),
-            lerpy(y),
-            previousPosition[2],
-          ]);
-          setPreviousPosition(position);
-          break;
-        }
-        case PlaneType.Zy: {
-          position = new Float32Array([
-            previousPosition[0],
-            lerpy(y),
-            -1 * lerpx(x),
-          ]);
-          setPreviousPosition(position);
-          break;
-        }
-        case PlaneType.Zx: {
-          position = new Float32Array([
-            lerpx(x),
-            previousPosition[1],
-            lerpy(y),
-          ]);
-          setPreviousPosition(position);
-          break;
-        }
-        default: {
-          return;
-        }
+
+      let vectorOnPosition: Vector | undefined;
+
+      if (shapeBuffer) {
+        vectorOnPosition = shapeBuffer.vectors.find(
+          ({ position }) => Math.hypot(position[0] - x, position[1] - y) < 3
+        );
+      } else {
+        vectorOnPosition = undefined;
       }
-      switch (sketchMode) {
-        case SketchMode.CreateSketchElement: {
-          if (hoverElementIndex === 0) {
-            const edgeElement: EdgeElement = {
-              type: SketchElementType.Edge,
-              source: currentSketchElement as number,
-              target: 0,
-              color: defaultColor,
-            };
-            setSketchMode(SketchMode.CreateSketchElement);
-            setElements([]);
-            setShapes((shapes) => [
-              ...shapes,
-              {
-                elements: [...elements, edgeElement],
-                stroke: new Uint8ClampedArray([0, 0, 0, 1]),
-                fill: new Uint8ClampedArray([0, 0, 0, 0]),
-              },
-            ]);
-            setCurrentSketchElement(null);
-            setHoverElementIndex(null);
-          } else if (elements.length === 0) {
-            const vertexElement: VertexElement = {
-              type: SketchElementType.Vertex,
-              position,
+
+      switch (mode) {
+        case CanvasMode.Select: {
+          setDragStartedPosition([x, y]);
+          break;
+        }
+        case CanvasMode.Draw:
+          {
+            const newVectorId = uuidv4();
+            const newVector: Vector = {
+              id: newVectorId,
+              position: [x, y],
               controlPoints: [],
+              type: VectorType.Vertex,
             };
-            setElements([vertexElement]);
-            setCurrentSketchElement(0);
-          } else {
-            setElements((elements) => {
-              const vertexElement: VertexElement = {
-                type: SketchElementType.Vertex,
-                position,
-                controlPoints: [],
-              };
-              const edgeElement: EdgeElement = {
-                type: SketchElementType.Edge,
-                source: currentSketchElement as number,
-                target: elements.length + 1,
-                color: defaultColor,
-              };
-              return [...elements, edgeElement, vertexElement];
-            });
-            setCurrentSketchElement(
-              (currentSketchElement) => (currentSketchElement as number) + 2
-            );
+            if (shapeBuffer) {
+              setShapeBuffer({
+                ...shapeBuffer,
+                vectors: [...shapeBuffer.vectors, newVector],
+              });
+            } else {
+              setShapeBuffer({
+                vectors: [newVector],
+                stroke: defaultColor,
+              });
+            }
+            setCurrentVectorId(newVectorId);
           }
           break;
+      }
+
+      if (vectorOnPosition) {
+        if (event.shiftKey) {
+          if (vectorOnPosition.type === VectorType.ControlPoint) {
+            const parent = shapeBuffer!.vectors.find(
+              (vector) =>
+                vector.type === VectorType.Vertex &&
+                vector.controlPoints.includes(vectorOnPosition!.id)
+            )! as Vertex;
+            setShapeBuffer((shapeBuffer) => ({
+              ...shapeBuffer!,
+              vectors: shapeBuffer!.vectors
+                .map((vector) =>
+                  vector.id === parent.id
+                    ? { ...vector, controlPoints: [] }
+                    : vector
+                )
+                .filter((vector) => !parent.controlPoints.includes(vector.id)),
+            }));
+            setCurrentVectorId(null);
+          } else if (
+            vectorOnPosition.type === VectorType.Vertex &&
+            vectorOnPosition.controlPoints.length > 0
+          ) {
+            setShapeBuffer((shapeBuffer) => ({
+              ...shapeBuffer!,
+              vectors: shapeBuffer!.vectors.filter(
+                (vector) =>
+                  vector.id !== vectorOnPosition!.id &&
+                  !(vectorOnPosition as Vertex).controlPoints.includes(
+                    vector.id
+                  )
+              ),
+            }));
+            setCurrentVectorId(null);
+          } else {
+            setShapeBuffer((shapeBuffer) => ({
+              ...shapeBuffer!,
+              vectors: shapeBuffer!.vectors.filter(
+                (vector) => vector.id !== vectorOnPosition!.id
+              ),
+            }));
+            setCurrentVectorId(null);
+          }
+        } else {
+          setMode(CanvasMode.Reposition);
+          let vectorIds;
+          if (selectedVectorIds.length > 0) {
+            vectorIds = selectedVectorIds;
+          } else if (vectorOnPosition.type === VectorType.Vertex) {
+            vectorIds = vectorOnPosition.controlPoints.concat(
+              vectorOnPosition.id
+            );
+          } else {
+            vectorIds = [vectorOnPosition.id];
+          }
+          setSelectedVectorIds(vectorIds);
+          if (shapeBuffer) {
+            setPositionBuffer({
+              cursor: [x, y],
+              element: vectorIds.map(
+                (vectorId) =>
+                  shapeBuffer.vectors.find((vector) => vector.id === vectorId)!
+                    .position
+              ),
+            });
+          }
         }
       }
     },
-    [
-      lerpx,
-      lerpy,
-      sketchMode,
-      hoverElementIndex,
-      elements,
-      currentSketchElement,
-      planeType,
-      previousPosition,
-      defaultColor,
-    ]
+    [mode, shapeBuffer, selectedVectorIds, defaultColor]
   );
-  let showControllers;
-  showControllers = planeType !== PlaneType.Perspective;
-  const onCanvasFeedbackReceived = (feedback: CanvasFeedback) => {
-    switch (feedback.type) {
-      case CanvasFeedbackType.OnVertexOver:
-        setHoverElementIndex(feedback.index);
-        break;
-      case CanvasFeedbackType.OnVertexOut:
-        setHoverElementIndex(null);
-        break;
-    }
-  };
   const onChangeColor = (color: Color) => {
     setDefaultColor(color);
+    if (shapeBuffer) {
+      setShapeBuffer({
+        ...shapeBuffer,
+        stroke: color,
+      });
+    }
   };
   useEffect(() => {
     const onKeyPress = (event: KeyboardEvent) => {
       switch (event.key) {
+        case "Escape":
         case "Enter": {
-          setSketchMode(SketchMode.CreateSketchElement);
-            setElements([]);
-            setShapes((shapes) => [
-              ...shapes,
-              {
-                elements: elements,
-                stroke: new Uint8ClampedArray([0, 0, 0, 1]),
-                fill: new Uint8ClampedArray([0, 0, 0, 0]),
-              },
-            ]);
-            setCurrentSketchElement(null);
-            setHoverElementIndex(null);
+          setMode(CanvasMode.Draw);
+          if (shapeBuffer) {
+            setShapes((shapes) => [...shapes, shapeBuffer]);
+          }
+          setShapeBuffer({ vectors: [], stroke: defaultColor });
+          setCurrentVectorId(null);
           break;
         }
       }
     };
-    document.body.addEventListener('keypress', onKeyPress);
+    document.body.addEventListener("keydown", onKeyPress);
     return () => {
-      document.body.removeEventListener('keypress', onKeyPress);
+      document.body.removeEventListener("keydown", onKeyPress);
+    };
+  }, [shapeBuffer, defaultColor]);
+  let selectionBoundingBox: null | BoundingBox = useMemo(() => {
+    if (!dragStartedPosition || !dragPosition) {
+      return null;
     }
-  }, [elements]);
+    const xs = [dragStartedPosition[0], dragPosition[0]];
+    const ys = [dragStartedPosition[1], dragPosition[1]];
+    return [
+      [Math.min(...xs), Math.min(...ys)],
+      [Math.max(...xs), Math.max(...ys)],
+    ];
+  }, [dragPosition, dragStartedPosition]);
+  const onPointerUp: PointerEventHandler<HTMLDivElement> = useCallback(() => {
+    switch (mode) {
+      case CanvasMode.Reposition: {
+        setPositionBuffer(null);
+        setMode(CanvasMode.Select);
+        break;
+      }
+      case CanvasMode.Select: {
+        const [[x1, y1], [x2, y2]] = selectionBoundingBox!;
+        if (shapeBuffer) {
+          setSelectedVectorIds(
+            shapeBuffer.vectors
+              .filter(
+                (vector) =>
+                  vector.position[0] > x1 &&
+                  vector.position[0] < x2 &&
+                  vector.position[1] > y1 &&
+                  vector.position[1] < y2
+              )
+              .map((vector) => vector.id)
+          );
+        }
+        setDragStartedPosition(null);
+        setDragPosition(null);
+        break;
+      }
+    }
+  }, [mode, selectionBoundingBox, shapeBuffer]);
+  useEffect(() => {
+    switch (mode) {
+      case CanvasMode.Close: {
+        setMode(CanvasMode.Draw);
+        if (shapeBuffer) {
+          setShapes((shapes) => [...shapes, shapeBuffer]);
+        }
+        setShapeBuffer({ vectors: [], stroke: defaultColor });
+        setCurrentVectorId(null);
+      }
+    }
+  }, [mode, defaultColor, shapeBuffer]);
   return (
     <div className="Container">
       <div className={"Header"}>
@@ -350,36 +426,67 @@ function App() {
         <h1>Sketchbook</h1>
       </div>
       <Toolbar
-        planeType={planeType}
-        onPlaneTypeChange={setPlaneType}
         documentColors={[
           new Uint8ClampedArray([255, 255, 255, 0]),
           new Uint8ClampedArray([0, 0, 0, 1]),
         ]}
         onChangeColor={onChangeColor}
         defaultColor={defaultColor}
+        onCanvasModeChange={setMode}
+        canvasMode={mode}
       />
       <div
         className="Canvas"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
         ref={canvasRef}
       >
         {isLoading ? (
           <progress />
         ) : (
           <>
-            <CanvasWireframe
-              shapes={shapes}
-              onCanvasFeedback={onCanvasFeedbackReceived}
-              showControllers={showControllers}
-              projection={projection}
-              devicePixelRatio={devicePixelRatio}
+            <Svg
               width={width}
               height={height}
-              elements={elements}
-              hoverElementIndex={hoverElementIndex}
-            />
+              style={{
+                // background: `url(/img.png)`,
+                backgroundSize: 600,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center 2px",
+              }}
+            >
+              {selectionBoundingBox && (
+                <rect
+                  fill={"transparent"}
+                  stroke={"black"}
+                  x={selectionBoundingBox[0][0]}
+                  y={selectionBoundingBox[0][1]}
+                  width={
+                    selectionBoundingBox[1][0] - selectionBoundingBox[0][0]
+                  }
+                  height={
+                    selectionBoundingBox[1][1] - selectionBoundingBox[0][1]
+                  }
+                ></rect>
+              )}
+              {shapeBuffer && (
+                <>
+                  <PointCloud points={shapeBuffer.vectors} />
+                  <SVGPath
+                    stroke={shapeBuffer.stroke}
+                    points={shapeBuffer.vectors}
+                  />
+                </>
+              )}
+              {shapes.map((shape, index) => (
+                <SVGPath
+                  key={index}
+                  stroke={shape.stroke}
+                  points={shape.vectors}
+                />
+              ))}
+            </Svg>
           </>
         )}
       </div>
