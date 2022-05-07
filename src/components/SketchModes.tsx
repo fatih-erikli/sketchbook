@@ -5,7 +5,7 @@ import { Icon } from "./Icon";
 
 const SketchModesRadioInputList = styled.div`
   position: absolute;
-  margin-top: -6.2rem;
+  margin-top: -7.3rem;
   z-index: 8;
 `;
 
@@ -13,7 +13,8 @@ const CanvasModes: [CanvasMode, string][] = [
   [CanvasMode.Draw, "Draw"],
   [CanvasMode.Select, "Select"],
   [CanvasMode.Reposition, "Reposition"],
-  [CanvasMode.Close, "Close"],
+  [CanvasMode.Close, "Close current shape"],
+  [CanvasMode.Reset, "Clear sketch"],
 ];
 
 export const SketchModes = ({
@@ -34,7 +35,10 @@ export const SketchModes = ({
               <input
                 checked={canvasMode === mode}
                 value={mode}
-                onChange={() => onChange(mode)}
+                onChange={() => {
+                  onChange(mode);
+                  setShowSketchModes(false);
+                }}
                 name={"plane-type"}
                 type={"radio"}
               ></input>

@@ -5,7 +5,8 @@ import { toHex } from "./ColorPicker";
 export const SVGPath: FC<{
   points: Vector[];
   stroke: Color;
-}> = ({ points, stroke }) => {
+  lineWidth: number;
+}> = ({ points, stroke, lineWidth }) => {
   let svgPath = useMemo(() => {
     const vertexes: Vertex[] = points.filter(
       (vector) => vector.type === VectorType.Vertex
@@ -37,5 +38,12 @@ export const SVGPath: FC<{
     }
     return svgPath;
   }, [points]);
-  return <path d={svgPath} stroke={toHex(stroke)} fill={"transparent"} />;
+  return (
+    <path
+      d={svgPath}
+      strokeWidth={lineWidth}
+      stroke={toHex(stroke)}
+      fill={"transparent"}
+    />
+  );
 };

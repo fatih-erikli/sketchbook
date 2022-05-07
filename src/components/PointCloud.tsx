@@ -18,7 +18,7 @@ export const PointCloud: FC<{
             fill={"transparent"}
             cx={point.position[0]}
             cy={point.position[1]}
-            r={2}
+            r={0.5}
           />
           {(point as Vertex).controlPoints &&
             (point as Vertex).controlPoints.map((vertexId) => {

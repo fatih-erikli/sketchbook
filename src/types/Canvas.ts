@@ -27,11 +27,35 @@ export type Vector = Vertex | ControlPointLeft | ControlPointRight;
 export type Shape = {
   vectors: Vector[];
   stroke: Color;
+  lineWidth: number;
 };
 export enum CanvasMode {
   Draw,
   Select,
   Reposition,
   Close,
+  Reset,
 }
 export type BoundingBox = [Position, Position];
+export enum ChangeLogEntryType {
+  FinalizeShape,
+  CreateVectors,
+  DeleteVector,
+  SelectShapes,
+  DeleteShapes,
+};
+export type ChangeLogEntry = {
+  type: ChangeLogEntryType.FinalizeShape;
+} | {
+  type: ChangeLogEntryType.CreateVectors;
+  vectors: Vector[];
+} | {
+  type: ChangeLogEntryType.DeleteVector;
+  vector: Vector;
+} | {
+  type: ChangeLogEntryType.SelectShapes;
+  shapeIndexes: number[];
+} | {
+  type: ChangeLogEntryType.DeleteShapes,
+  shapes: Shape[];
+};
