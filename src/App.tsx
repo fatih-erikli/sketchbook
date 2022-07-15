@@ -31,8 +31,8 @@ import { SVGPath } from "./components/SVGPath";
 import { uuidv4 } from "./utils/common";
 
 const Svg = styled.svg`
-position: absolute;
-z-index: 2;
+  position: absolute;
+  z-index: 2;
 `;
 
 function App() {
@@ -59,14 +59,19 @@ function App() {
   } | null>(null);
   const [lineWidth, setLineWidth] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [showBackground, setShowBackground] = useState<boolean>(true);
   const width = canvasSize ? canvasSize.width : 600;
   const height = canvasSize ? canvasSize.height : 400;
   useEffect(() => {
     if (isLoading) {
       const figure = localStorage.getItem("figure");
       const lineWidth = localStorage.getItem("lineWidth");
+      const showBackground = localStorage.getItem("showBackground");
       if (figure) {
         setShapes(JSON.parse(figure));
+      }
+      if (showBackground) {
+        setShowBackground(JSON.parse(showBackground));
       }
       if (lineWidth) {
         setLineWidth(Number(lineWidth));
@@ -263,23 +268,30 @@ function App() {
   const resetRedoStack = useCallback(() => {
     setRedoStack([]);
   }, []);
-  const logCreateVector = useCallback((vector: Vector) => {
-    resetRedoStack();
-    if (!shapeBuffer) {return;}
-    let vectors: Vector[] = [];
-    switch (vector.type) {
-      case VectorType.Vertex: {
-        vectors.push(vector);
-        for (const controlPoint of vector.controlPoints) {
-          vectors.push(shapeBuffer.vectors.find(({id}) => id === controlPoint)!);
+  const logCreateVector = useCallback(
+    (vector: Vector) => {
+      resetRedoStack();
+      if (!shapeBuffer) {
+        return;
+      }
+      let vectors: Vector[] = [];
+      switch (vector.type) {
+        case VectorType.Vertex: {
+          vectors.push(vector);
+          for (const controlPoint of vector.controlPoints) {
+            vectors.push(
+              shapeBuffer.vectors.find(({ id }) => id === controlPoint)!
+            );
+          }
         }
       }
-    }
-    setUndoStack((undoStack) => [
-      ...undoStack,
-      { type: ChangeLogEntryType.CreateVectors, vectors },
-    ]);
-  }, [shapeBuffer, resetRedoStack]);
+      setUndoStack((undoStack) => [
+        ...undoStack,
+        { type: ChangeLogEntryType.CreateVectors, vectors },
+      ]);
+    },
+    [shapeBuffer, resetRedoStack]
+  );
   const createShape = useCallback(
     (vector) => {
       setShapeBuffer({
@@ -416,14 +428,13 @@ function App() {
     }
   };
   const deleteVectors = useCallback((vectors: Vector[]) => {
-    const vectorIds = vectors.map(vector => vector.id);
+    const vectorIds = vectors.map((vector) => vector.id);
     setShapeBuffer((shapeBuffer) =>
       shapeBuffer
         ? {
             ...shapeBuffer,
             vectors: shapeBuffer.vectors.filter(
-              (vector) =>
-                !vectorIds.includes(vector.id)
+              (vector) => !vectorIds.includes(vector.id)
             ),
           }
         : shapeBuffer
@@ -440,7 +451,9 @@ function App() {
     }
   }, [undoStack, deleteVectors]);
   const redo = useCallback(() => {
-    if (!redoStack.length) {return;}
+    if (!redoStack.length) {
+      return;
+    }
     const changeLogEntry = redoStack[redoStack.length - 1];
     setRedoStack((redoStack) => redoStack.slice(0, redoStack.length - 1));
     switch (changeLogEntry.type) {
@@ -453,6 +466,22 @@ function App() {
   useEffect(() => {
     const onKeyPress = (event: KeyboardEvent) => {
       switch (event.code) {
+        case "Digit0":
+        case "Digit1":
+        case "Digit2":
+        case "Digit3":
+        case "Digit4":
+        case "Digit5":
+        case "Digit6":
+        case "Digit7":
+        case "Digit8":
+        case "Digit9": {
+          const multiper = event.shiftKey ? 1 : 0.1;
+          const newLineWidthValue = Number((multiper * Number(event.code.replace("Digit", ""))).toFixed(1));
+          setLineWidth(newLineWidthValue);
+          localStorage.setItem('lineWidth', JSON.stringify(newLineWidthValue));
+          break;
+        }
         case "KeyZ": {
           if (event.metaKey) {
             if (event.shiftKey) {
@@ -470,6 +499,15 @@ function App() {
             )
           );
           setSelectedShapeIndexes([]);
+          break;
+        }
+        case "KeyB": {
+          const newShowBackgroundState = !showBackground;
+          localStorage.setItem(
+            "showBackground",
+            JSON.stringify(newShowBackgroundState)
+          );
+          setShowBackground(newShowBackgroundState);
           break;
         }
         case "KeyS": {
@@ -504,6 +542,7 @@ function App() {
     shapes,
     undo,
     redo,
+    showBackground,
   ]);
   const onPointerUp: PointerEventHandler<HTMLDivElement> = useCallback(() => {
     switch (mode) {
@@ -582,6 +621,16 @@ function App() {
       }
     }
   }, [mode, defaultColor, shapeBuffer, lineWidth]);
+  let canvasStyle = {};
+  if (showBackground) {
+    canvasStyle = {
+      background: `url(/.jpg)`,
+      backgroundSize: 1050,
+      backgroundRepeat: "no-repeat",
+      backgroundPosition: "70px -30px",
+      mixBlendMode: "multiply",
+    };
+  }
   return (
     <div className="Container">
       <div className={"Header"}>
@@ -606,15 +655,13 @@ function App() {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         ref={canvasRef}
+        style={canvasStyle}
       >
         {isLoading ? (
           <progress />
         ) : (
           <>
-            <Svg
-              width={width}
-              height={height}
-            >
+            <Svg width={width} height={height}>
               {selectionBoundingBox && (
                 <rect
                   fill={"transparent"}
