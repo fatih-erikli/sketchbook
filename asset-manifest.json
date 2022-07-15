@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/sketchbook/static/css/main.c6bf9a2d.css",
-    "main.js": "/sketchbook/static/js/main.6d4a96ed.js",
+    "main.js": "/sketchbook/static/js/main.2921d046.js",
     "static/js/787.4d5ba00b.chunk.js": "/sketchbook/static/js/787.4d5ba00b.chunk.js",
     "index.html": "/sketchbook/index.html",
     "main.c6bf9a2d.css.map": "/sketchbook/static/css/main.c6bf9a2d.css.map",
-    "main.6d4a96ed.js.map": "/sketchbook/static/js/main.6d4a96ed.js.map",
+    "main.2921d046.js.map": "/sketchbook/static/js/main.2921d046.js.map",
     "787.4d5ba00b.chunk.js.map": "/sketchbook/static/js/787.4d5ba00b.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.c6bf9a2d.css",
-    "static/js/main.6d4a96ed.js"
+    "static/js/main.2921d046.js"
   ]
 }
