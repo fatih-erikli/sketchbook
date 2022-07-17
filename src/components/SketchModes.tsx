@@ -5,7 +5,7 @@ import { Icon } from "./Icon";
 
 const SketchModesRadioInputList = styled.div`
   position: absolute;
-  margin-top: -7.3rem;
+  margin-top: -10rem;
   z-index: 8;
 `;
 
@@ -14,7 +14,9 @@ const CanvasModes: [CanvasMode, string][] = [
   [CanvasMode.Select, "Select"],
   [CanvasMode.Reposition, "Reposition"],
   [CanvasMode.Close, "Close current shape"],
-  [CanvasMode.Reset, "Clear sketch"],
+  [CanvasMode.Reset, "Reset"],
+  [CanvasMode.Save, "Save the sketch"],
+  [CanvasMode.Restore, "Restore the sketch"],
 ];
 
 export const SketchModes = ({

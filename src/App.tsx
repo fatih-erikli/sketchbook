@@ -606,6 +606,30 @@ function App() {
   ]);
   useEffect(() => {
     switch (mode) {
+      case CanvasMode.Save: {
+        const filename = prompt('Filename?') as string;
+        localStorage.setItem(filename, JSON.stringify(shapes));
+        break;
+      }
+      case CanvasMode.Restore: {
+        const filename = prompt('Filename?') as string;
+        const memory = localStorage.getItem(filename);
+        if (memory) {
+          let parsed;
+          try {
+            parsed = JSON.parse(memory);
+          } catch (e) {
+            console.log('file not found.')
+          }
+          if (Array.isArray(parsed)) {
+            setShapes(parsed);
+          } else {
+            console.log('shapes file corrupted.')
+          }
+        }
+        setMode(CanvasMode.Draw);
+        break;
+      }
       case CanvasMode.Reset: {
         setShapes([]);
         setShapeBuffer(null);

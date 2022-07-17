@@ -35,6 +35,8 @@ export enum CanvasMode {
   Reposition,
   Close,
   Reset,
+  Save,
+  Restore,
 }
 export type BoundingBox = [Position, Position];
 export enum ChangeLogEntryType {
