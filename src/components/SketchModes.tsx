@@ -16,7 +16,7 @@ const CanvasModes: [CanvasMode, string][] = [
   [CanvasMode.Close, "Close current shape"],
   [CanvasMode.Reset, "Reset"],
   [CanvasMode.Save, "Save the sketch"],
-  [CanvasMode.Restore, "Restore the sketch"],
+  [CanvasMode.Restore, "Restore a sketch"],
 ];
 
 export const SketchModes = ({
