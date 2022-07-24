@@ -650,7 +650,7 @@ function App() {
         setCurrentVectorId(null);
       }
     }
-  }, [mode, defaultColor, shapeBuffer, lineWidth]);
+  }, [mode, defaultColor, shapeBuffer, lineWidth, shapes]);
   let canvasStyle = {};
   if (showBackground) {
     canvasStyle = {
@@ -663,7 +663,7 @@ function App() {
   }
   const [geometries, setGeometries] = useState<Geometry[]>([]);
   useEffect(() => {
-    fetch("/book.obj")
+    fetch("./book.obj")
       .then((r) => r.text())
       .then((text) => {
         setGeometries(parseGeometry(text));
