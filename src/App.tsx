@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Color } from "./types/Sketch";
+import { Color, Geometry } from "./types/Sketch";
 import { relativeCoordinatesFromHtmlElement } from "./utils/dom";
 import {
   BoundingBox,
@@ -29,6 +29,10 @@ import {
 import { PointCloud } from "./components/PointCloud";
 import { SVGPath } from "./components/SVGPath";
 import { uuidv4 } from "./utils/common";
+import { CanvasWebGLWithMaterials } from "./components/CanvasWebGLWithMaterials";
+import { parseGeometry } from "./parsers/geometry";
+import { createIdentity, fromQuat, fromTranslation, fromXRotation, fromYRotation, lookAt, multiply, perspective } from "./utils/mat4";
+import { quatFromPointAngle } from "./utils/quat";
 
 const Svg = styled.svg`
   position: absolute;
@@ -477,9 +481,11 @@ function App() {
         case "Digit8":
         case "Digit9": {
           const multiper = event.shiftKey ? 1 : 0.1;
-          const newLineWidthValue = Number((multiper * Number(event.code.replace("Digit", ""))).toFixed(1));
+          const newLineWidthValue = Number(
+            (multiper * Number(event.code.replace("Digit", ""))).toFixed(1)
+          );
           setLineWidth(newLineWidthValue);
-          localStorage.setItem('lineWidth', JSON.stringify(newLineWidthValue));
+          localStorage.setItem("lineWidth", JSON.stringify(newLineWidthValue));
           break;
         }
         case "KeyZ": {
@@ -607,24 +613,24 @@ function App() {
   useEffect(() => {
     switch (mode) {
       case CanvasMode.Save: {
-        const filename = prompt('Filename?') as string;
+        const filename = prompt("Filename?") as string;
         localStorage.setItem(filename, JSON.stringify(shapes));
         break;
       }
       case CanvasMode.Restore: {
-        const filename = prompt('Filename?') as string;
+        const filename = prompt("Filename?") as string;
         const memory = localStorage.getItem(filename);
         if (memory) {
           let parsed;
           try {
             parsed = JSON.parse(memory);
           } catch (e) {
-            console.log('file not found.')
+            console.log("file not found.");
           }
           if (Array.isArray(parsed)) {
             setShapes(parsed);
           } else {
-            console.log('shapes file corrupted.')
+            console.log("shapes file corrupted.");
           }
         }
         setMode(CanvasMode.Draw);
@@ -655,6 +661,24 @@ function App() {
       mixBlendMode: "multiply",
     };
   }
+  const [geometries, setGeometries] = useState<Geometry[]>([]);
+  useEffect(() => {
+    fetch("/book.obj")
+      .then((r) => r.text())
+      .then((text) => {
+        setGeometries(parseGeometry(text));
+      });
+  }, []);
+  const [cursor, setCursor] = useState([0, 0]);
+  useEffect(() => {
+    const onMouseMove = (event: MouseEvent) => {
+      setCursor([event.clientX, event.clientY]);
+    };
+    document.body.addEventListener('pointermove', onMouseMove);
+    return () => {
+      document.body.removeEventListener('pointermove', onMouseMove);
+    }
+  }, []);
   return (
     <div className="Container">
       <div className={"Header"}>
@@ -681,6 +705,95 @@ function App() {
         ref={canvasRef}
         style={canvasStyle}
       >
+        <CanvasWebGLWithMaterials
+          projection={{
+            view: createIdentity(),
+            projection: fromQuat(
+              quatFromPointAngle(new Float32Array([
+                -cursor[0],
+                cursor[1]
+              ]), 70)
+            ),
+            cameraPosition: new Float32Array([200, 20, 2, 1]),
+            cameraTarget: new Float32Array([200, 100, 3, 1]),
+          }}
+          vertexShaderSource={`attribute vec4 a_position;
+attribute vec3 a_normal;
+attribute vec2 a_texcoord;
+attribute vec4 a_color;
+
+uniform mat4 u_projection;
+uniform mat4 u_view;
+uniform mat4 u_world;
+uniform vec3 u_view_world_position;
+
+varying vec3 v_normal;
+varying vec3 v_surface_to_view;
+varying vec2 v_texcoord;
+varying vec4 v_color;
+
+
+void main() {
+  vec4 world_position = u_world * a_position;
+
+  
+  gl_Position = u_projection * u_view * world_position;
+
+
+  v_surface_to_view = u_view_world_position - world_position.xyz;
+  v_normal = mat3(u_world) * a_normal;
+  v_texcoord = a_texcoord;
+  v_color = a_color;
+}
+
+      
+      `}
+          fragmentShaderSource={`precision highp float;
+
+varying vec3 v_normal;
+varying vec3 v_surface_to_view;
+varying vec2 v_texcoord;
+varying vec4 v_color;
+
+uniform vec3 diffuse;
+uniform sampler2D diffuse_map;
+uniform vec3 ambient;
+uniform vec3 emissive;
+uniform vec3 specular;
+uniform sampler2D specular_map;
+uniform float shininess;
+uniform float opacity;
+uniform vec3 u_light_direction;
+uniform vec3 u_ambient_light;
+
+
+void main() {
+  vec3 normal = normalize(v_normal);
+
+  vec3 surface_to_view_direction = normalize(v_surface_to_view);
+  vec3 half_vector = normalize(u_light_direction + surface_to_view_direction);
+
+  float fake_light = dot(u_light_direction, normal) * 0.5 + 1.0;
+  float specular_light = clamp(dot(normal, half_vector), 0.0, 1.0);
+  vec4 specular_map_color = texture2D(specular_map, v_texcoord);
+  vec3 effective_specular = specular * specular_map_color.rgb;
+
+  vec4 diffuse_map_color = texture2D(diffuse_map, v_texcoord);
+  vec3 effective_diffuse = diffuse * diffuse_map_color.rgb * v_color.rgb;
+  float effective_opacity = opacity * diffuse_map_color.a * v_color.a;
+
+  gl_FragColor = vec4(emissive +
+    ambient * u_ambient_light +
+    effective_diffuse * fake_light +
+    effective_specular * pow(specular_light, shininess), effective_opacity);
+}
+
+      `}
+          geometries={geometries}
+          width={width}
+          height={width}
+          onClick={() => {}}
+        />
         {isLoading ? (
           <progress />
         ) : (

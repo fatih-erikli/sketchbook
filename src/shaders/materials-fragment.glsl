@@ -37,4 +37,5 @@ void main() {
     ambient * u_ambient_light +
     effective_diffuse * fake_light +
     effective_specular * pow(specular_light, shininess), effective_opacity);
+    
 }

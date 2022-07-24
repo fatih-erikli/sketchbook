@@ -894,7 +894,6 @@ function loadShader(
 function numberOfComponentsByName(name: string) {
   switch (name) {
     case "color":
-      return 4;
     case "position":
     case "normal":
       return 3;
@@ -1005,7 +1004,7 @@ export const CanvasWebGLWithMaterials = ({
       ),
     };
     return geometries.map(({ data }) => {
-      const arrays: any = { ...data, color: { value: [1, 1, 1, 1] } };
+      const arrays: any = { ...data };
       const attribs: any = {};
       for (const key in arrays) {
         const attribName = `a_${key}`;
@@ -1055,6 +1054,8 @@ export const CanvasWebGLWithMaterials = ({
           };
         }
       }
+
+      // attribs['color'] = { value: [1,1,1,1] };
       const bufferInfo = {
         attribs,
         numElements:
@@ -1065,10 +1066,10 @@ export const CanvasWebGLWithMaterials = ({
         material: {
           diffuse: [1, 1, 1],
           diffuse_map: textures.defaultWhite,
-          ambient: [0, 0, 0],
+          ambient: [1, 1, 1],
           specular: [1, 1, 1],
           specular_map: textures.defaultWhite,
-          shininess: 400,
+          shininess: 100,
           opacity: 1,
         },
         bufferInfo,
@@ -1109,19 +1110,18 @@ export const CanvasWebGLWithMaterials = ({
     );
     programInfo.uniformSetters["u_view"](projection.view);
     programInfo.uniformSetters["u_projection"](projection.projection);
-    programInfo.uniformSetters["u_view_world_position"](
-      projection.cameraPosition
-    );
 
     for (const { bufferInfo, material, matrix } of geometryBuffers) {
-      programInfo.attribSetters["a_position"](bufferInfo.attribs["a_position"]);
-
+      programInfo.uniformSetters["u_view_world_position"](new Float32Array([1,1,1,1]));
+      console.log(bufferInfo);
       // if (bufferInfo.attribs['a_normal'].length > 0) {
       programInfo.attribSetters["a_normal"](bufferInfo.attribs["a_normal"]);
       // }
+      programInfo.attribSetters["a_position"](bufferInfo.attribs["a_position"]);
+      
       programInfo.attribSetters["a_color"](bufferInfo.attribs["a_color"]);
-      // programInfo.uniformSetters["u_world"](inverse(projection.view));
-      programInfo.uniformSetters["u_world"](matrix);
+      programInfo.uniformSetters["u_world"](inverse(projection.view));
+      // programInfo.uniformSetters["u_world"](matrix);
       programInfo.uniformSetters["diffuse"](material["diffuse"]);
       programInfo.uniformSetters["diffuse_map"](material["diffuse_map"]);
       programInfo.uniformSetters["ambient"](material["ambient"]);
